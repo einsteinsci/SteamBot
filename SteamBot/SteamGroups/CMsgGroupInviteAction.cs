@@ -12,60 +12,60 @@ using SteamKit2.Internal;
 
 namespace SteamBot.SteamGroups
 {
-    //CMsgInviteUserToClan
+	//CMsgInviteUserToClan
 
-    /// <summary>
-    /// Message used to Accept or Decline a group(clan) invite.
-    /// </summary>
-    public class CMsgGroupInviteAction : ISteamSerializableMessage, ISteamSerializable
-    {
-        EMsg ISteamSerializableMessage.GetEMsg()
-        {
-            return EMsg.ClientAcknowledgeClanInvite;
-        }
+	/// <summary>
+	/// Message used to Accept or Decline a group(clan) invite.
+	/// </summary>
+	public class CMsgGroupInviteAction : ISteamSerializableMessage, ISteamSerializable
+	{
+		EMsg ISteamSerializableMessage.GetEMsg()
+		{
+			return EMsg.ClientAcknowledgeClanInvite;
+		}
 
-        public CMsgGroupInviteAction()
-        {
+		public CMsgGroupInviteAction()
+		{
 
-        }
+		}
 
-        /// <summary>
-        /// Group invited to.
-        /// </summary>
-        public ulong GroupID = 0;
+		/// <summary>
+		/// Group invited to.
+		/// </summary>
+		public ulong GroupID = 0;
 
-        /// <summary>
-        /// To accept or decline the invite.
-        /// </summary>
-        public bool AcceptInvite = true;
+		/// <summary>
+		/// To accept or decline the invite.
+		/// </summary>
+		public bool AcceptInvite = true;
 
-        void ISteamSerializable.Serialize(Stream stream)
-        {
-            try
-            {
-                BinaryWriter bw = new BinaryWriter(stream);
-                bw.Write(GroupID);
-                bw.Write(AcceptInvite);
-            }//try
-            catch
-            {
-                throw new IOException();
-            }//catch
-        }//Serialize()
+		void ISteamSerializable.Serialize(Stream stream)
+		{
+			try
+			{
+				BinaryWriter bw = new BinaryWriter(stream);
+				bw.Write(GroupID);
+				bw.Write(AcceptInvite);
+			}//try
+			catch
+			{
+				throw new IOException();
+			}//catch
+		}//Serialize()
 
-        void ISteamSerializable.Deserialize(Stream stream)
-        {
-            try
-            {
-                BinaryReader br = new BinaryReader(stream);
-                GroupID = br.ReadUInt64();
-                AcceptInvite = br.ReadBoolean();
-            }//try
-            catch
-            {
-                throw new IOException();
-            }//catch
-        }//Deserialize()
-    }//CMsgClanInviteAction
+		void ISteamSerializable.Deserialize(Stream stream)
+		{
+			try
+			{
+				BinaryReader br = new BinaryReader(stream);
+				GroupID = br.ReadUInt64();
+				AcceptInvite = br.ReadBoolean();
+			}//try
+			catch
+			{
+				throw new IOException();
+			}//catch
+		}//Deserialize()
+	}//CMsgClanInviteAction
 
 }

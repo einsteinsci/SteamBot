@@ -42,10 +42,10 @@
 //
 // Option format strings:
 //  Regex-like BNF Grammar: 
-//    name: .+
-//    type: [=:]
-//    sep: ( [^{}]+ | '{' .+ '}' )?
-//    aliases: ( name type sep ) ( '|' name type sep )*
+//	name: .+
+//	type: [=:]
+//	sep: ( [^{}]+ | '{' .+ '}' )?
+//	aliases: ( name type sep ) ( '|' name type sep )*
 // 
 // Each '|'-delimited name is an alias for the associated action.  If the
 // format string ends in a '=', it has a required value.  If the format
@@ -74,7 +74,7 @@
 //   - '-' is used to start the option group
 //   - all of the bundled options are a single character
 //   - at most one of the bundled options accepts a value, and the value
-//     provided starts from the next character to the end of the string.
+//	 provided starts from the next character to the end of the string.
 //
 // This allows specifying '-a -b -c' as '-abc', and specifying '-D name=value'
 // as '-Dname=value'.
@@ -87,8 +87,8 @@
 // Examples:
 //  int verbose = 0;
 //  OptionSet p = new OptionSet ()
-//    .Add ("v", v => ++verbose)
-//    .Add ("name=|value=", v => Console.WriteLine (v));
+//	.Add ("v", v => ++verbose)
+//	.Add ("name=|value=", v => Console.WriteLine (v));
 //  p.Parse (new string[]{"-v", "--v", "/v", "-name=A", "/name", "B", "extra"});
 //
 // The above would parse the argument string array, and would invoke the
@@ -98,7 +98,7 @@
 //
 // C# 3.0 collection initializers are supported and encouraged:
 //  var p = new OptionSet () {
-//    { "h|?|help", v => ShowHelp () },
+//	{ "h|?|help", v => ShowHelp () },
 //  };
 //
 // System.ComponentModel.TypeConverter is also supported, allowing the use of
@@ -107,20 +107,20 @@
 // type:
 //
 //  var p = new OptionSet () {
-//    { "foo=", (Foo f) => Console.WriteLine (f.ToString ()) },
+//	{ "foo=", (Foo f) => Console.WriteLine (f.ToString ()) },
 //  };
 //
 // Random other tidbits:
 //  - Boolean options (those w/o '=' or ':' in the option format string)
-//    are explicitly enabled if they are followed with '+', and explicitly
-//    disabled if they are followed with '-':
-//      string a = null;
-//      var p = new OptionSet () {
-//        { "a", s => a = s },
-//      };
-//      p.Parse (new string[]{"-a"});   // sets v != null
-//      p.Parse (new string[]{"-a+"});  // sets v != null
-//      p.Parse (new string[]{"-a-"});  // sets v == null
+//	are explicitly enabled if they are followed with '+', and explicitly
+//	disabled if they are followed with '-':
+//	  string a = null;
+//	  var p = new OptionSet () {
+//		{ "a", s => a = s },
+//	  };
+//	  p.Parse (new string[]{"-a"});   // sets v != null
+//	  p.Parse (new string[]{"-a+"});  // sets v != null
+//	  p.Parse (new string[]{"-a-"});  // sets v == null
 //
 
 using System;
@@ -157,18 +157,18 @@ namespace NDesk.Options {
 
 		#region ICollection
 		void ICollection.CopyTo (Array array, int index)  {(values as ICollection).CopyTo (array, index);}
-		bool ICollection.IsSynchronized                   {get {return (values as ICollection).IsSynchronized;}}
-		object ICollection.SyncRoot                       {get {return (values as ICollection).SyncRoot;}}
+		bool ICollection.IsSynchronized				   {get {return (values as ICollection).IsSynchronized;}}
+		object ICollection.SyncRoot					   {get {return (values as ICollection).SyncRoot;}}
 		#endregion
 
 		#region ICollection<T>
-		public void Add (string item)                       {values.Add (item);}
-		public void Clear ()                                {values.Clear ();}
-		public bool Contains (string item)                  {return values.Contains (item);}
+		public void Add (string item)					   {values.Add (item);}
+		public void Clear ()								{values.Clear ();}
+		public bool Contains (string item)				  {return values.Contains (item);}
 		public void CopyTo (string[] array, int arrayIndex) {values.CopyTo (array, arrayIndex);}
-		public bool Remove (string item)                    {return values.Remove (item);}
-		public int Count                                    {get {return values.Count;}}
-		public bool IsReadOnly                              {get {return false;}}
+		public bool Remove (string item)					{return values.Remove (item);}
+		public int Count									{get {return values.Count;}}
+		public bool IsReadOnly							  {get {return false;}}
 		#endregion
 
 		#region IEnumerable
@@ -180,20 +180,20 @@ namespace NDesk.Options {
 		#endregion
 
 		#region IList
-		int IList.Add (object value)                {return (values as IList).Add (value);}
-		bool IList.Contains (object value)          {return (values as IList).Contains (value);}
-		int IList.IndexOf (object value)            {return (values as IList).IndexOf (value);}
+		int IList.Add (object value)				{return (values as IList).Add (value);}
+		bool IList.Contains (object value)		  {return (values as IList).Contains (value);}
+		int IList.IndexOf (object value)			{return (values as IList).IndexOf (value);}
 		void IList.Insert (int index, object value) {(values as IList).Insert (index, value);}
-		void IList.Remove (object value)            {(values as IList).Remove (value);}
-		void IList.RemoveAt (int index)             {(values as IList).RemoveAt (index);}
-		bool IList.IsFixedSize                      {get {return false;}}
-		object IList.this [int index]               {get {return this [index];} set {(values as IList)[index] = value;}}
+		void IList.Remove (object value)			{(values as IList).Remove (value);}
+		void IList.RemoveAt (int index)			 {(values as IList).RemoveAt (index);}
+		bool IList.IsFixedSize					  {get {return false;}}
+		object IList.this [int index]			   {get {return this [index];} set {(values as IList)[index] = value;}}
 		#endregion
 
 		#region IList<T>
-		public int IndexOf (string item)            {return values.IndexOf (item);}
+		public int IndexOf (string item)			{return values.IndexOf (item);}
 		public void Insert (int index, string item) {values.Insert (index, item);}
-		public void RemoveAt (int index)            {values.RemoveAt (index);}
+		public void RemoveAt (int index)			{values.RemoveAt (index);}
 
 		private void AssertValid (int index)
 		{
@@ -236,11 +236,11 @@ namespace NDesk.Options {
 	}
 
 	public class OptionContext {
-		private Option                option;
-		private string                name;
-		private int                   index;
-		private OptionSet             set;
-		private OptionValueCollection c;
+		private Option					option;
+		private string					name;
+		private int						index;
+		private OptionSet				set;
+		private OptionValueCollection	c;
 
 		public OptionContext (OptionSet set)
 		{
@@ -300,10 +300,10 @@ namespace NDesk.Options {
 				throw new ArgumentOutOfRangeException ("maxValueCount");
 
 			this.prototype   = prototype;
-			this.names       = prototype.Split ('|');
+			this.names	   = prototype.Split ('|');
 			this.description = description;
-			this.count       = maxValueCount;
-			this.type        = ParsePrototype ();
+			this.count	   = maxValueCount;
+			this.type		= ParsePrototype ();
 
 			if (this.count == 0 && type != OptionValueType.None)
 				throw new ArgumentException (
@@ -322,10 +322,10 @@ namespace NDesk.Options {
 						"prototype");
 		}
 
-		public string           Prototype       {get {return prototype;}}
-		public string           Description     {get {return description;}}
+		public string		   Prototype	   {get {return prototype;}}
+		public string		   Description	 {get {return description;}}
 		public OptionValueType  OptionValueType {get {return type;}}
-		public int              MaxValueCount   {get {return count;}}
+		public int			  MaxValueCount   {get {return count;}}
 
 		public string[] GetNames ()
 		{
@@ -357,7 +357,7 @@ namespace NDesk.Options {
 			return t;
 		}
 
-		internal string[] Names           {get {return names;}}
+		internal string[] Names		   {get {return names;}}
 		internal string[] ValueSeparators {get {return separators;}}
 
 		static readonly char[] NameTerminator = new char[]{'=', ':'};
@@ -439,7 +439,7 @@ namespace NDesk.Options {
 		{
 			OnParseComplete (c);
 			c.OptionName  = null;
-			c.Option      = null;
+			c.Option	  = null;
 			c.OptionValues.Clear ();
 		}
 
@@ -793,7 +793,7 @@ namespace NDesk.Options {
 			if (Contains (n)) {
 				p = this [n];
 				c.OptionName = f + n;
-				c.Option     = p;
+				c.Option	 = p;
 				switch (p.OptionValueType) {
 					case OptionValueType.None:
 						c.OptionValues.Add (n);
@@ -844,7 +844,7 @@ namespace NDesk.Options {
 				p = this [rn];
 				string v = n [n.Length-1] == '+' ? option : null;
 				c.OptionName  = option;
-				c.Option      = p;
+				c.Option	  = p;
 				c.OptionValues.Add (v);
 				p.Invoke (c);
 				return true;
@@ -873,8 +873,8 @@ namespace NDesk.Options {
 						break;
 					case OptionValueType.Optional:
 					case OptionValueType.Required: {
-						string v     = n.Substring (i+1);
-						c.Option     = p;
+						string v	 = n.Substring (i+1);
+						c.Option	 = p;
 						c.OptionName = opt;
 						ParseValue (v.Length != 0 ? v : null, c);
 						return true;
@@ -889,7 +889,7 @@ namespace NDesk.Options {
 		private static void Invoke (OptionContext c, string name, string value, Option option)
 		{
 			c.OptionName  = name;
-			c.Option      = option;
+			c.Option	  = option;
 			c.OptionValues.Add (value);
 			option.Invoke (c);
 		}
@@ -933,7 +933,7 @@ namespace NDesk.Options {
 				Write (o, ref written, names [0]);
 			}
 			else {
-				Write (o, ref written, "      --");
+				Write (o, ref written, "	  --");
 				Write (o, ref written, names [0]);
 			}
 
