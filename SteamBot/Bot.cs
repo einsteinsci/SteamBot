@@ -14,6 +14,7 @@ using SteamTrade;
 using SteamKit2.Internal;
 using SteamTrade.TradeOffer;
 using System.Globalization;
+using System.Linq;
 
 namespace SteamBot
 {
@@ -256,8 +257,14 @@ namespace SteamBot
 			Log.Debug("Trying to shut down bot thread.");
 			SteamClient.Disconnect();
 			botThread.CancelAsync();
+			if (botThread.IsBusy)
+			{
+				botThread.CancelAsync();
+			}
+
 			while (botThread.IsBusy)
 				Thread.Yield();
+
 			userHandlers.Clear();
 		}
 
@@ -336,7 +343,7 @@ namespace SteamBot
 			}
 		}
 
-		bool HandleTradeSessionStart (SteamID other)
+		bool HandleTradeSessionStart(SteamID other)
 		{
 			if (CurrentTrade != null)
 				return false;
@@ -376,7 +383,7 @@ namespace SteamBot
 
 		public void SetGamePlaying(int id)
 		{
-			var gamePlaying = new SteamKit2.ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
+			var gamePlaying = new ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
 			if (id != 0)
 				gamePlaying.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
 				{
@@ -480,13 +487,18 @@ namespace SteamBot
 			msg.Handle<SteamUser.UpdateMachineAuthCallback>(
 				authCallback => OnUpdateMachineAuthCallback(authCallback)
 			);
-			#endregion
+			#endregion Login
 
 			#region Friends
 			msg.Handle<SteamFriends.FriendsListCallback>(callback =>
 			{
 				foreach (SteamFriends.FriendsListCallback.Friend friend in callback.FriendList)
 				{
+					if (Admins.Contains(friend.SteamID))
+					{
+						SteamFriends.SendChatMessage(friend.SteamID, EChatEntryType.ChatMsg, "Hello, sir.");
+					}
+
 					switch (friend.SteamID.AccountType)
 					{
 					case EAccountType.Clan:
@@ -542,21 +554,19 @@ namespace SteamBot
 
 				if (callback.EntryType == EChatEntryType.ChatMsg)
 				{
-					Log.Info ("Chat Message from {0}: {1}",
-										 SteamFriends.GetFriendPersonaName (callback.Sender),
-										 callback.Message
-										 );
+					Log.Info("Chat Message from {0}: {1}", 
+						SteamFriends.GetFriendPersonaName(callback.Sender), callback.Message);
 					GetUserHandler(callback.Sender).OnMessageHandler(callback.Message, type);
 				}
 			});
-			#endregion
+			#endregion Friends
 
 			#region Group Chat
 			msg.Handle<SteamFriends.ChatMsgCallback>(callback =>
 			{
 				GetUserHandler(callback.ChatterID).OnChatRoomMessage(callback.ChatRoomID, callback.ChatterID, callback.Message);
 			});
-			#endregion
+			#endregion Group Chat
 
 			#region Trading
 			msg.Handle<SteamTrading.SessionStartCallback> (callback =>
@@ -592,28 +602,30 @@ namespace SteamBot
 				}
 				catch (Exception)
 				{
-					SteamFriends.SendChatMessage(callback.OtherClient,
-							 EChatEntryType.ChatMsg,
-							 "Trade declined. Could not correctly fetch your backpack.");
+					SteamFriends.SendChatMessage(callback.OtherClient, EChatEntryType.ChatMsg, 
+						"Trade declined. Could not correctly fetch your backpack.");
 
 					SteamTrade.RespondToTrade(callback.TradeID, false);
 					return;
 				}
 
-				//if (tradeManager.OtherInventory.IsPrivate)
-				//{
-				//	SteamFriends.SendChatMessage(callback.OtherClient, 
-				//								 EChatEntryType.ChatMsg,
-				//								 "Trade declined. Your backpack cannot be private.");
+				if (tradeManager.OtherInventory.IsPrivate)
+				{
+					SteamFriends.SendChatMessage(callback.OtherClient, EChatEntryType.ChatMsg, 
+						"Trade declined. Your backpack cannot be private.");
 
-				//	SteamTrade.RespondToTrade (callback.TradeID, false);
-				//	return;
-				//}
-
-				if (CurrentTrade == null && GetUserHandler (callback.OtherClient).OnTradeRequest ())
-					SteamTrade.RespondToTrade (callback.TradeID, true);
-				else
 					SteamTrade.RespondToTrade (callback.TradeID, false);
+					return;
+				}
+
+				if (CurrentTrade == null && GetUserHandler(callback.OtherClient).OnTradeRequest())
+				{
+					SteamTrade.RespondToTrade(callback.TradeID, true);
+				}
+				else
+				{
+					SteamTrade.RespondToTrade(callback.TradeID, false);
+				}
 			});
 
 			msg.Handle<SteamTrading.TradeResultCallback> (callback =>
@@ -632,13 +644,13 @@ namespace SteamBot
 				}
 
 			});
-			#endregion
+			#endregion Trading
 
 			#region Disconnect
 			msg.Handle<SteamUser.LoggedOffCallback> (callback =>
 			{
 				IsLoggedIn = false;
-				Log.Warn("Logged off Steam.  Reason: {0}", callback.Result);
+				Log.Warn("Logged off Steam. Reason: {0}", callback.Result);
 			});
 
 			msg.Handle<SteamClient.DisconnectedCallback> (callback =>
@@ -652,10 +664,10 @@ namespace SteamBot
 
 				SteamClient.Connect ();
 			});
-			#endregion
+			#endregion Disconnect
 
 			#region Notifications
-			msg.Handle<SteamBot.SteamNotifications.NotificationCallback>(callback =>
+			msg.Handle<SteamNotifications.NotificationCallback>(callback =>
 			{
 				//currently only appears to be of trade offer
 				if (callback.Notifications.Count != 0)
@@ -663,15 +675,17 @@ namespace SteamBot
 					foreach (var notification in callback.Notifications)
 					{
 						Log.Info(notification.UserNotificationType + " notification");
-		}
+					}
 				}
 
 				// Get offers only if cookies are valid
 				if (CheckCookies())
+				{
 					tradeOfferManager.GetOffers();
+				}
 			});
 
-			msg.Handle<SteamBot.SteamNotifications.CommentNotificationCallback>(callback =>
+			msg.Handle<SteamNotifications.CommentNotificationCallback>(callback =>
 			{
 				//various types of comment notifications on profile/activity feed etc
 				//Log.Info("received CommentNotificationCallback");
@@ -855,7 +869,7 @@ namespace SteamBot
 		/// <summary>
 		/// Subscribes all listeners of this to the trade.
 		/// </summary>
-		public void SubscribeTrade (Trade trade, UserHandler handler)
+		public void SubscribeTrade(Trade trade, UserHandler handler)
 		{
 			trade.OnSuccess += handler.OnTradeSuccess;
 			trade.OnAwaitingEmailConfirmation += handler.OnTradeAwaitingEmailConfirmation;
@@ -898,7 +912,7 @@ namespace SteamBot
 			var inventory = Inventory.FetchInventory(SteamUser.SteamID, ApiKey, SteamWeb);
 			if(inventory.IsPrivate)
 			{
-				log.Warn("The bot's backpack is private! If your bot adds any items it will fail! Your bot's backpack should be Public.");
+				Log.Warn("The bot's backpack is private! If your bot adds any items it will fail! Your bot's backpack should be Public.");
 			}
 			return inventory;
 		}
@@ -939,7 +953,7 @@ namespace SteamBot
 				{
 					Log.Error("URI: {0} >> {1}", (e.Response != null && 
 						e.Response.ResponseUri != null ? e.Response.ResponseUri.ToString() : "unknown"), e.ToString());
-					System.Threading.Thread.Sleep(45000);//Steam is down, retry in 45 seconds.
+					Thread.Sleep(45000); //Steam is down, retry in 45 seconds.
 				}
 				catch (Exception e)
 				{
@@ -987,7 +1001,7 @@ namespace SteamBot
 			AcceptInvite.Body.GroupID = group.ConvertToUInt64();
 			AcceptInvite.Body.AcceptInvite = true;
 
-			this.SteamClient.Send(AcceptInvite);
+			SteamClient.Send(AcceptInvite);
 			
 		}
 

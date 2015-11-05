@@ -3,6 +3,8 @@ using System.Windows.Forms;
 using SteamKit2;
 using SteamTrade;
 using System.Collections.Generic;
+using System.Linq;
+using SteamTrade.TradeOffer;
 
 namespace SteamBot
 {
@@ -14,13 +16,15 @@ namespace SteamBot
 	{
 		private const string AddCmd = "add";
 		private const string RemoveCmd = "remove";
+		private const string HelpCmd = "help";
+
 		private const string AddCratesSubCmd = "crates";
 		private const string AddWepsSubCmd = "weapons";
 		private const string AddMetalSubCmd = "metal";
 		private const string AddAllSubCmd = "all";
-		private const string HelpCmd = "help";
 
-		public AdminUserHandler(Bot bot, SteamID sid) : base(bot, sid) {}
+		public AdminUserHandler(Bot bot, SteamID sid) : base(bot, sid)
+		{ }
 
 		#region Overrides of UserHandler
 
@@ -28,8 +32,7 @@ namespace SteamBot
 		/// Called when the bot is fully logged in.
 		/// </summary>
 		public override void OnLoginCompleted()
-		{
-		}
+		{ }
 
 		/// <summary>
 		/// Triggered when a clan invites the bot.
@@ -39,7 +42,7 @@ namespace SteamBot
 		/// </returns>
 		public override bool OnGroupAdd()
 		{
-			return false;
+			return IsAdmin;
 		}
 
 		/// <summary>
@@ -56,12 +59,29 @@ namespace SteamBot
 				return true;
 			}
 
-			Log.Warn("Random SteamID: " + OtherSID + " tried to add the bot as a friend");
+			Log.Warn("Arbitrary SteamID: " + OtherSID + " tried to add the bot as a friend");
 			return false;
 		}
 
 		public override void OnFriendRemove()
 		{
+			Log.Info("I lost a friend today.");
+		}
+
+		public override void OnNewTradeOffer(TradeOffer offer)
+		{
+			if (IsAdmin)
+			{
+				offer.Accept();
+				Log.Success("Accepted trade offer from admin {0}.", Bot.SteamFriends.GetFriendPersonaName(OtherSID));
+				SendChatMessage("Trade offer complete.");
+			}
+			else
+			{
+				offer.Decline();
+				Log.Warn("Declined trade offer from user {0}.", OtherSID.ToString());
+				SendChatMessage("I don't know you. I cannot accept your trade offer.");
+			}
 		}
 
 		/// <summary>
@@ -70,7 +90,29 @@ namespace SteamBot
 		/// </summary>
 		public override void OnMessage(string message, EChatEntryType type)
 		{
-			// TODO: magic command system
+			if (type != EChatEntryType.ChatMsg)
+			{
+				return;
+			}
+
+			if (message.StartsWith("!") ||
+				message.StartsWith("/") ||
+				message.StartsWith("#"))
+			{
+				List<string> args = message.Split(' ').ToList();
+				string cmdName = args[0].Substring(1);
+				args.RemoveAt(0);
+
+				ChatHandler.RunCommand(cmdName, args, this);
+			}
+			else if (ChatHandler.ChatCommands.Exists((cmd) => message.ToLower().StartsWith(cmd.CommandName)))
+			{
+				List<string> args = message.Split(' ').ToList();
+				string cmdName = args[0];
+				args.RemoveAt(0);
+
+				ChatHandler.RunCommand(cmdName, args, this);
+			}
 		}
 
 		/// <summary>
@@ -171,25 +213,26 @@ namespace SteamBot
 			if (message.StartsWith(AddCmd))
 			{
 				HandleAddCommand(message);
-				SendTradeMessage("done adding.");
+				SendTradeMessage("Done adding.");
 			}
 			else if (message.StartsWith(RemoveCmd))
 			{
 				HandleRemoveCommand(message);
-				SendTradeMessage("done removing.");
+				SendTradeMessage("Done removing.");
 			}
 		}
 
 		private void PrintHelpMessage()
 		{
-			SendTradeMessage("{0} {1} [amount] [series] - adds all crates (optionally by series number, use 0 for amount to add all)", AddCmd, AddCratesSubCmd);
+			SendTradeMessage("{0} {1} [amount] [series] - adds all crates " +
+				"(optionally by series number, use 0 for amount to add all)", AddCmd, AddCratesSubCmd);
 			SendTradeMessage("{0} {1} [amount] - adds metal", AddCmd, AddMetalSubCmd);
 			SendTradeMessage("{0} {1} [amount] - adds weapons", AddCmd, AddWepsSubCmd);
 			SendTradeMessage("{0} {1} [amount] - adds items", AddCmd, AddAllSubCmd);
-			SendTradeMessage(@"{0} <craft_material_type> [amount] - adds all or a given amount of items of a given crafting type.", AddCmd);
-			SendTradeMessage(@"{0} <defindex> [amount] - adds all or a given amount of items of a given defindex.", AddCmd);
+			SendTradeMessage("{0} <craft_material_type> [amount] - adds all or a given amount of items of a given crafting type.", AddCmd);
+			SendTradeMessage("{0} <defindex> [amount] - adds all or a given amount of items of a given defindex.", AddCmd);
 
-			SendTradeMessage(@"See http://wiki.teamfortress.com/wiki/WebAPI/GetSchema for info about craft_material_type or defindex.");
+			SendTradeMessage("See http://wiki.teamfortress.com/wiki/WebAPI/GetSchema for info about craft_material_type or defindex.");
 		}
 
 		private void HandleAddCommand(string command)
@@ -197,12 +240,12 @@ namespace SteamBot
 			var data = command.Split(' ');
 			string typeToAdd;
 
-			bool subCmdOk = GetSubCommand (data, out typeToAdd);
+			bool subCmdOk = GetSubCommand(data, out typeToAdd);
 
 			if (!subCmdOk)
 				return;
 
-			uint amount = GetAddAmount (data);
+			uint amount = GetAddAmount(data);
 
 			// if user supplies the defindex directly use it to add.
 			int defindex;
@@ -222,7 +265,7 @@ namespace SteamBot
 					break;
 				case AddCratesSubCmd:
 					// data[3] is the optional series number
-					if (!String.IsNullOrEmpty(data[3]))
+					if (!string.IsNullOrEmpty(data[3]))
 						AddCrateBySeries(data[3], amount);
 					else
 						AddItemsByCraftType("supply_crate", amount);
@@ -235,25 +278,52 @@ namespace SteamBot
 					break;
 			}
 		}
-
-
-
+		
 		private void HandleRemoveCommand(string command)
 		{
-			var data = command.Split(' ');
+			string[] data = command.Split(' ');
 
-			string subCommand;
+			List<string> args = new List<string>();
+			for (int i = 1; i < data.Length; i++)
+			{
+				args.Add(data[i]);
+			}
 
-			bool subCmdOk = GetSubCommand(data, out subCommand);
-
-			// were dumb right now... just remove everything.
-			Trade.RemoveAllItems();
-
-			if (!subCmdOk)
+			if (args.Count == 0 || args[0].ToLower() == "all")
+			{
+				Trade.RemoveAllItems();
 				return;
+			}
+
+			if (args[0].ToLower() == "scrap")
+			{
+				args[0] = TF2Value.SCRAP_DEFINDEX.ToString();
+			}
+			else if (args[0].ToLower() == "reclaimed" || args[0].ToLower() == "rec")
+			{
+				args[0] = TF2Value.RECLAIMED_DEFINDEX.ToString();
+			}
+			else if (args[0].ToLower() == "refined" || args[0].ToLower() == "ref")
+			{
+				args[0] = TF2Value.REFINED_DEFINDEX.ToString();
+			}
+
+			int n;
+			if (int.TryParse(args[0], out n))
+			{
+				ushort count = 0;
+				if (args.Count > 1)
+				{
+					if (!ushort.TryParse(args[1], out count))
+					{
+						count = 0;
+					}
+				}
+
+				Trade.RemoveAllItemsByDefindex(n, count);
+			}
 		}
-
-
+		
 		private void AddItemsByCraftType(string typeToAdd, uint amount)
 		{
 			var items = Trade.CurrentSchema.GetItemsByCraftingMaterial(typeToAdd);
@@ -308,7 +378,7 @@ namespace SteamBot
 				for (int count = 0; count < item.Attributes.Length; count++)
 				{
 					// FloatValue will give you the crate's series number
-					crateNum = (int) item.Attributes[count].FloatValue;
+					crateNum = (int)item.Attributes[count].FloatValue;
 
 					if (crateNum == ser)
 					{
@@ -326,7 +396,7 @@ namespace SteamBot
 			}
 		}
 
-		bool GetSubCommand (string[] data, out string subCommand)
+		bool GetSubCommand(string[] data, out string subCommand)
 		{
 			if (data.Length < 2)
 			{
@@ -335,28 +405,28 @@ namespace SteamBot
 				return false;
 			}
 
-			if (String.IsNullOrEmpty (data [1]))
+			if (string.IsNullOrEmpty(data[1]))
 			{
 				SendTradeMessage("No parameter for cmd");
 				subCommand = null;
 				return false;
 			}
 
-			subCommand = data [1];
+			subCommand = data[1];
 
 			return true;
 		}
 
-		static uint GetAddAmount (string[] data)
+		static uint GetAddAmount(string[] data)
 		{
 			uint amount = 0;
 
 			if (data.Length > 2)
 			{
 				// get the optional amount parameter
-				if (!String.IsNullOrEmpty (data [2]))
+				if (!String.IsNullOrEmpty(data[2]))
 				{
-					uint.TryParse (data [2], out amount);
+					uint.TryParse(data[2], out amount);
 				}
 			}
 

@@ -69,7 +69,7 @@ namespace SteamBot
 		/// </example>
 		public void GetOtherInventory()
 		{
-			otherInventoryTask = Task.Factory.StartNew(() =>Inventory.FetchInventory(OtherSID, Bot.ApiKey, SteamWeb));
+			otherInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(OtherSID, Bot.ApiKey, SteamWeb));
 		}
 
 		public Inventory OtherInventory

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NDesk.Options;
 
 namespace SteamBot
@@ -22,6 +23,11 @@ namespace SteamBot
 
 		[STAThread]
 		public static void Main(string[] args)
+		{
+			StartUpBotManager(args);
+		}
+
+		private static void StartUpBotManager(string[] args)
 		{
 			opts.Parse(args);
 
@@ -74,12 +80,14 @@ namespace SteamBot
 				return;
 			}
 
-			Bot b = new Bot(configObject.Bots[botIndex], configObject.ApiKey, BotManager.UserHandlerCreator, true, true);
+			Bot b = new Bot(configObject.Bots[botIndex], configObject.ApiKey, 
+				(b2, sid) => BotManager.UserHandlerCreator(b2, sid, configObject), true, true);
 			Console.Title = "Bot Manager";
 			b.StartBot();
 
 			string AuthSet = "auth";
 			string ExecCommand = "exec";
+			string ExitCommand = "exit";
 
 			// this loop is needed to keep the botmode console alive.
 			// instead of just sleeping, this loop will handle console input
@@ -104,6 +112,10 @@ namespace SteamBot
 					else if (cs[0].Equals(ExecCommand, StringComparison.CurrentCultureIgnoreCase))
 					{
 						b.HandleBotCommand(c.Remove(0, cs[0].Length + 1));
+					}
+					else if (cs[0].ToLower() == ExitCommand)
+					{
+						b.StopBot();
 					}
 				}
 			}
@@ -164,8 +176,18 @@ namespace SteamBot
 				{
 					string inputText = Console.ReadLine();
 
-					if (String.IsNullOrEmpty(inputText))
+					if (string.IsNullOrEmpty(inputText))
 						continue;
+
+					if (inputText.ToLower() == "exit")
+					{
+						Console.ForegroundColor = ConsoleColor.Yellow;
+						Console.WriteLine("Exiting bot manager...");
+
+						manager.StopBots();
+						isclosing = true;
+						break;
+					}
 
 					bmi.CommandInterpreter(inputText);
 

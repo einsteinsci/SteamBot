@@ -136,10 +136,27 @@ namespace SteamTrade
 
 			[JsonProperty("contained_item")]
 			public Item ContainedItem { get; set; }
+
+            public bool HasKillstreak()
+            {
+                ItemAttribute att = Attributes.FirstOrDefault((a) => a.Defindex == ItemAttribute.KILLSTREAK_DEFINDEX);
+
+                return att != null;
+            }
+
+            public bool HasPaint()
+            {
+                ItemAttribute att = Attributes.FirstOrDefault((a) => a.Defindex == ItemAttribute.PAINT_DEFINDEX);
+
+                return att != null;
+            }
 		}
 
 		public class ItemAttribute
 		{
+            public const ushort KILLSTREAK_DEFINDEX = 2025;
+            public const ushort PAINT_DEFINDEX = 142;
+
 			[JsonProperty("defindex")]
 			public ushort Defindex { get; set; }
 

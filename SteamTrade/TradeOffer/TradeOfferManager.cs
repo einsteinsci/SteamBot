@@ -144,7 +144,7 @@ namespace SteamTrade.TradeOffer
 
 		private int GetUnixTimeStamp()
 		{
-			return (Int32)(DateTime.Now.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+			return (int)(DateTime.Now.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 		}
 
 		public TradeOffer NewOffer(SteamID other)

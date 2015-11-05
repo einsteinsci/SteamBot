@@ -12,7 +12,8 @@ namespace SteamTrade
 {
 	/// <summary>
 	/// Class which represents a trade.
-	/// Note that the logic that Steam uses can be seen from their web-client source-code:  http://steamcommunity-a.akamaihd.net/public/javascript/economy_trade.js
+	/// Note that the logic that Steam uses can be seen from their web-client source-code:
+    /// http://steamcommunity-a.akamaihd.net/public/javascript/economy_trade.js
 	/// </summary>
 	public partial class Trade
 	{
@@ -44,7 +45,7 @@ namespace SteamTrade
 				case TradeStatusType.TradeCancelled:
 					return "was cancelled " + (tradeCancelledByBot ? "by bot" : "by other user");
 				case TradeStatusType.SessionExpired:
-					return String.Format("expired because {0} timed out", (otherUserTimingOut ? "other user" : "bot"));
+					return string.Format("expired because {0} timed out", (otherUserTimingOut ? "other user" : "bot"));
 				case TradeStatusType.TradeFailed:
 					return "failed unexpectedly";
 				case TradeStatusType.PendingEmail:
@@ -86,7 +87,7 @@ namespace SteamTrade
 
 			session = new TradeSession(other, steamWeb);
 
-			this.eventList = new List<TradeEvent>();
+			eventList = new List<TradeEvent>();
 
 			myOfferedItemsLocalCopy = new Dictionary<int, TradeUserAssets>();
 			otherOfferedItems = new List<TradeUserAssets>();

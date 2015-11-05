@@ -229,7 +229,7 @@ namespace SteamBot
 			}
 			else
 			{
-				mainLog.Warn(String.Format("Invalid Bot index: {0}", index));
+				mainLog.Warn(string.Format("Invalid Bot index: {0}", index));
 			}
 		}
 
@@ -240,7 +240,7 @@ namespace SteamBot
 		/// <param name="sid">The steamId.</param>
 		/// <returns>A <see cref="UserHandler"/> instance.</returns>
 		/// <exception cref="ArgumentException">Thrown if the control class type does not exist.</exception>
-		public static UserHandler UserHandlerCreator(Bot bot, SteamID sid)
+		public static UserHandler UserHandlerCreatorOld(Bot bot, SteamID sid)
 		{
 			Type controlClass = Type.GetType(bot.BotControlClass);
 
@@ -249,6 +249,18 @@ namespace SteamBot
 
 			return (UserHandler)Activator.CreateInstance(
 					controlClass, new object[] { bot, sid });
+		}
+
+		public static UserHandler UserHandlerCreator(Bot bot, SteamID sid, Configuration config)
+		{
+			if (config.Admins.Contains(sid))
+			{
+				return new AdminUserHandler(bot, sid);
+			}
+			else
+			{
+				return new SimpleUserHandler(bot, sid);
+			}
 		}
 
 		private void Dispose(bool disposing)
@@ -392,7 +404,7 @@ namespace SteamBot
 				// the bot object itself is threaded so we just build it and start it.
 				Bot b = new Bot(botConfig,
 								config.ApiKey,
-								UserHandlerCreator,
+								(b2, sid) => UserHandlerCreator(b2, sid, config),
 								true);
 
 				TheBot = b;

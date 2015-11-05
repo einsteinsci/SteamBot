@@ -70,7 +70,7 @@ namespace SteamTrade
 			request.CookieContainer = _cookies;
 
 			// Write the data to the body for POST and other methods
-			if (!isGetMethod && !String.IsNullOrEmpty(dataString))
+			if (!isGetMethod && !string.IsNullOrEmpty(dataString))
 			{
 				byte[] dataBytes = Encoding.UTF8.GetBytes(dataString);
 				request.ContentLength = dataBytes.Length;

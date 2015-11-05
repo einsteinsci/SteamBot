@@ -15,6 +15,13 @@ namespace SteamTrade
 		private const int SCRAP_PER_RECLAIMED = 3;
 		private const int SCRAP_PER_REFINED = SCRAP_PER_RECLAIMED * RECLAIMED_PER_REFINED;
 		private const int RECLAIMED_PER_REFINED = 3;
+        private const int REFINED_PER_KEY = 16;
+        private const int GRAIN_PER_KEY = GRAIN_PER_REFINED * REFINED_PER_KEY;
+
+		public const ushort SCRAP_DEFINDEX = 5000;
+		public const ushort RECLAIMED_DEFINDEX = 5001;
+		public const ushort REFINED_DEFINDEX = 5002;
+		public const ushort KEY_DEFINDEX = 5021;
 
 		/// <summary>
 		/// A grain is a made-up type of metal, allowing us to create values equal to fractions of a scrap.
@@ -27,6 +34,7 @@ namespace SteamTrade
 		public static readonly TF2Value Scrap = Grain * GRAIN_PER_SCRAP;
 		public static readonly TF2Value Reclaimed = Grain * GRAIN_PER_RECLAIMED;
 		public static readonly TF2Value Refined = Grain * GRAIN_PER_REFINED;
+        public static readonly TF2Value Key = Grain * GRAIN_PER_KEY;
 
 		private readonly int _numGrains;
 

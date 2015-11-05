@@ -311,6 +311,7 @@ namespace SteamTrade
 					}
 				}
 			});
+			pollThread.Name = "Trading Poll Thread";
 
 			pollThread.Start();
 		}
