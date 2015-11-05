@@ -1,3 +1,6 @@
+## Fork Notice
+This project is a fork of [Jessecar96/SteamBot](https://github.com/Jessecar96/SteamBot) and is almost entirely the work of [Jessecar96](https://github.com/Jessecar96). It is a fork for personal use, and I have no intention of submitting a pull request.
+
 [![Build status](https://ci.appveyor.com/api/projects/status/r2ml39xoa5svu61y/branch/master?svg=true)](https://ci.appveyor.com/project/Jessecar96/steambot/branch/master)
 
 **SteamBot** is a bot written in C# for the purpose of interacting with Steam Chat and Steam Trade.  As of right now, about 8 contributors have all added to the bot.  The bot is publicly available under the MIT License. Check out [LICENSE] for more details.
