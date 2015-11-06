@@ -243,7 +243,7 @@ namespace SteamTrade.TradeWebAPI
 
 			Version = 1;
 
-			baseTradeURL = String.Format (SteamTradeUrl, OtherSID.ConvertToUInt64());
+			baseTradeURL = string.Format (SteamTradeUrl, OtherSID.ConvertToUInt64());
 		}
 	}
 }

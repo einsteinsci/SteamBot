@@ -46,6 +46,7 @@ namespace SteamBot
 		private bool cookiesAreInvalid = true;
 		private List<SteamID> friends;
 		private bool disposed = false;
+		private bool hasSetPersonaState = false;
 		#endregion
 
 		#region Public readonly variables
@@ -101,18 +102,24 @@ namespace SteamBot
 		/// Is bot fully Logged in.
 		/// Set only when bot did successfully Log in.
 		/// </summary>
-		public bool IsLoggedIn { get; private set; }
+		public bool IsLoggedIn
+		{ get; private set; }
 
 		/// <summary>
 		/// The current trade the bot is in.
 		/// </summary>
-		public Trade CurrentTrade { get; private set; }
+		public Trade CurrentTrade
+		{ get; private set; }
 
 		/// <summary>
 		/// The current game bot is in.
 		/// Default: 0 = No game.
 		/// </summary>
-		public int CurrentGame { get; private set; }
+		public int CurrentGame
+		{ get; private set; }
+
+		public OrderManager Orders
+		{ get; private set; }
 		#endregion
 
 		public IEnumerable<SteamID> FriendsList
@@ -153,7 +160,7 @@ namespace SteamBot
 			MaximumActionGap = config.MaximumActionGap;
 			DisplayNamePrefix = config.DisplayNamePrefix;
 			tradePollingInterval = config.TradePollingInterval <= 100 ? 800 : config.TradePollingInterval;
-			schemaLang = config.SchemaLang != null && config.SchemaLang.Length == 2 ? config.SchemaLang.ToLower() : "en";
+			schemaLang = config.SchemaLang != null ? config.SchemaLang : "en_US";
 			Admins = config.Admins;
 			ApiKey = !string.IsNullOrEmpty(config.ApiKey) ? config.ApiKey : apiKey;
 			isProccess = process;
@@ -181,6 +188,8 @@ namespace SteamBot
 				Console.WriteLine(@"(Console) FileLogLevel invalid or unspecified for bot {0}. Defaulting to ""Info""", DisplayName);
 				fileLogLevel = Log.LogLevel.Info;
 			}
+
+			Orders = OrderManager.Load();
 
 			logFile = config.LogFile;
 			Log = new Log(logFile, DisplayName, consoleLogLevel, fileLogLevel);
@@ -257,10 +266,6 @@ namespace SteamBot
 			Log.Debug("Trying to shut down bot thread.");
 			SteamClient.Disconnect();
 			botThread.CancelAsync();
-			if (botThread.IsBusy)
-			{
-				botThread.CancelAsync();
-			}
 
 			while (botThread.IsBusy)
 				Thread.Yield();
@@ -385,10 +390,12 @@ namespace SteamBot
 		{
 			var gamePlaying = new ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
 			if (id != 0)
+			{
 				gamePlaying.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
 				{
-					game_id = new GameID(id),
+					game_id = new GameID(id)
 				});
+			}
 			SteamClient.Send(gamePlaying);
 			CurrentGame = id;
 		}
@@ -396,8 +403,8 @@ namespace SteamBot
 		void HandleSteamMessage(ICallbackMsg msg)
 		{
 			Log.Debug(msg.ToString());
-#pragma warning disable CS0618
 
+#pragma warning disable CS0618
 			#region Login
 			msg.Handle<SteamClient.ConnectedCallback> (callback =>
 			{
@@ -435,7 +442,7 @@ namespace SteamBot
 					// try to get the steamguard auth code from the event callback
 					var eva = new SteamGuardRequiredEventArgs();
 					FireOnSteamGuardRequired(eva);
-					if (!String.IsNullOrEmpty(eva.SteamGuard))
+					if (!string.IsNullOrEmpty(eva.SteamGuard))
 						logOnDetails.AuthCode = eva.SteamGuard;
 					else
 						logOnDetails.AuthCode = Console.ReadLine();
@@ -492,6 +499,11 @@ namespace SteamBot
 			#region Friends
 			msg.Handle<SteamFriends.FriendsListCallback>(callback =>
 			{
+				if (!hasSetPersonaState)
+				{
+					SteamFriends.SetPersonaState(EPersonaState.LookingToTrade);
+				}
+
 				foreach (SteamFriends.FriendsListCallback.Friend friend in callback.FriendList)
 				{
 					if (Admins.Contains(friend.SteamID))
@@ -804,7 +816,7 @@ namespace SteamBot
 
 			Directory.CreateDirectory(System.IO.Path.Combine(System.Windows.Forms.Application.StartupPath, "sentryfiles"));
 
-			File.WriteAllBytes (System.IO.Path.Combine("sentryfiles", String.Format(
+			File.WriteAllBytes (System.IO.Path.Combine("sentryfiles", string.Format(
 				"{0}.sentryfile", logOnDetails.Username)), machineAuth.Data);
 			
 			var authResponse = new SteamUser.MachineAuthDetails

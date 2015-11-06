@@ -232,7 +232,7 @@ namespace SteamBot
 		{
 			string otherUserName = Bot.SteamFriends.GetFriendPersonaName(OtherSID);
 			string statusMessage = (Trade != null ? Trade.GetTradeStatusErrorString(status) : "died a horrible death");
-			string errorMessage = String.Format("Trade with {0} ({1}) {2}", otherUserName, OtherSID.ConvertToUInt64(), statusMessage);
+			string errorMessage = string.Format("Trade with {0} ({1}) {2}", otherUserName, OtherSID.ConvertToUInt64(), statusMessage);
 			OnTradeError(errorMessage);
 		}
 
@@ -296,12 +296,12 @@ namespace SteamBot
 					timer.Dispose();
 				}
 
-				message = (formatParams != null && formatParams.Any() ? String.Format(message, formatParams) : message);
+				message = (formatParams != null && formatParams.Any() ? string.Format(message, formatParams) : message);
 				messageFunc(message);
 			}
 			catch (Exception ex)
 			{
-				Log.Error(String.Format("Error occurred when sending message.  Message: \"{0}\" \nException: {1} ", message, ex.ToString()));
+				Log.Error(string.Format("Error occurred when sending message.  Message: \"{0}\" \nException: {1} ", message, ex.ToString()));
 			}
 		}
 
@@ -327,7 +327,7 @@ namespace SteamBot
 		/// A helper method for sending a chat message to the other user in the chat window (as opposed to the trade window)
 		/// </summary>
 		/// <param name="message">The message to send to the other user</param>
-		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as String.Format()</param>
+		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
 		protected virtual void SendChatMessage(string message, params object[] formatParams)
 		{
 			SendMessage(SendChatMessageImpl, message, null, formatParams);
@@ -339,7 +339,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="delayMs">The delay, in milliseconds, to wait before sending the message</param>
 		/// <param name="message">The message to send to the other user</param>
-		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as String.Format()</param>
+		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
 		protected virtual void SendChatMessage(int delayMs, string message, params object[] formatParams)
 		{
 			SendMessageDelayed(delayMs, SendChatMessageImpl, message, formatParams);
@@ -355,7 +355,7 @@ namespace SteamBot
 		/// If the trade has ended, nothing this does nothing
 		/// </summary>
 		/// <param name="message">The message to send to the other user</param>
-		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as String.Format()</param>
+		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
 		protected virtual void SendTradeMessage(string message, params object[] formatParams)
 		{
 			SendMessage(SendTradeMessageImpl, message, null, formatParams);
@@ -367,7 +367,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="delayMs">The delay, in milliseconds, to wait before sending the message</param>
 		/// <param name="message">The message to send to the other user</param>
-		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as String.Format()</param>
+		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
 		protected virtual void SendTradeMessage(int delayMs, string message, params object[] formatParams)
 		{
 			SendMessageDelayed(delayMs, SendTradeMessageImpl, message, formatParams);
@@ -386,7 +386,7 @@ namespace SteamBot
 		/// the user sent a message from last.  Useful for responding to commands.
 		/// </summary>
 		/// <param name="message">The message to send to the other user</param>
-		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as String.Format()</param>
+		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
 		protected virtual void SendReplyMessage(string message, params object[] formatParams)
 		{
 			if (_lastMessageWasFromTrade && Trade != null && !Trade.HasTradeEnded)
@@ -405,7 +405,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="delayMs">The delay, in milliseconds, to wait before sending the message</param>
 		/// <param name="message">The message to send to the other user</param>
-		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as String.Format()</param>
+		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
 		protected virtual void SendReplyMessage(int delayMs, string message, params object[] formatParams)
 		{
 			if (_lastMessageWasFromTrade && Trade != null && !Trade.HasTradeEnded)

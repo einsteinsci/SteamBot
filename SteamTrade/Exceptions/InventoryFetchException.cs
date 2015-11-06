@@ -24,7 +24,7 @@ namespace SteamTrade.Exceptions
 		/// Steam identifier that caused the fetch exception.
 		/// </param>
 		public InventoryFetchException (SteamID steamId)
-			: base(String.Format("Failed to fetch inventory for: {0}", steamId.ToString()))
+			: base(string.Format("Failed to fetch inventory for: {0}", steamId.ToString()))
 		{
 			FailingSteamId = steamId;
 		}

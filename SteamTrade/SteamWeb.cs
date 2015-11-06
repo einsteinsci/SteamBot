@@ -40,7 +40,7 @@ namespace SteamTrade
 			//Append the data to the URL for GET-requests
 			bool isGetMethod = (method.ToLower() == "get");
 			string dataString = (data == null ? null : String.Join("&", Array.ConvertAll(data.AllKeys, key =>
-				String.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(data[key]))
+				string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(data[key]))
 			)));
 
 			if (isGetMethod && !String.IsNullOrEmpty(dataString))

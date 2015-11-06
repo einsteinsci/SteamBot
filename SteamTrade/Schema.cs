@@ -142,6 +142,9 @@ namespace SteamTrade
 
 		public class Item
 		{
+			/// <summary>
+			/// Unlocalized Name
+			/// </summary>
 			[JsonProperty("name")]
 			public string Name { get; set; }
 
@@ -154,6 +157,9 @@ namespace SteamTrade
 			[JsonProperty("item_type_name")]
 			public string ItemTypeName { get; set; }
 
+			/// <summary>
+			/// Localized Item Name
+			/// </summary>
 			[JsonProperty("item_name")]
 			public string ItemName { get; set; }
 
@@ -171,6 +177,29 @@ namespace SteamTrade
 
 			[JsonProperty("item_quality")]
 			public int ItemQuality { get; set; }
+
+			public bool IsPure()
+			{
+				return Defindex == TF2Value.KEY_DEFINDEX || Defindex == TF2Value.REFINED_DEFINDEX ||
+					Defindex == TF2Value.RECLAIMED_DEFINDEX || Defindex == TF2Value.SCRAP_DEFINDEX;
+			}
+
+			public TF2Value? GetPureValue()
+			{
+				switch (Defindex)
+				{
+				case TF2Value.KEY_DEFINDEX:
+					return TF2Value.Key;
+				case TF2Value.REFINED_DEFINDEX:
+					return TF2Value.Refined;
+				case TF2Value.RECLAIMED_DEFINDEX:
+					return TF2Value.Reclaimed;
+				case TF2Value.SCRAP_DEFINDEX:
+					return TF2Value.Scrap;
+				default:
+					return null;
+				}
+			}
 		}
 
 		protected class SchemaResult

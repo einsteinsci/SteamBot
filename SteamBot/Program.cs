@@ -15,6 +15,34 @@ namespace SteamBot
 				{ "help", "shows this help text", p => showHelp = (p != null) }
 		};
 
+		
+		private static string defSettingsStr = @"{
+""Admins"":[""234567""],
+""ApiKey"":""Steam API Key goes here!"",
+""mainLog"": ""syslog.log"",
+""UseSeparateProcesses"": ""false"",
+""AutoStartAllBots"": true,
+""Bots"": [
+		{
+			""Username"":""BOT USERNAME"",
+			""Password"":""BOT PASSWORD"",
+			""ApiKey"":""Bot specific apiKey"",
+			""DisplayName"":""TestBot"",
+			""ChatResponse"":""Hi there bro"",
+			""logFile"": ""TestBot.log"",
+			""BotControlClass"": ""SteamBot.SimpleUserHandler"",
+			""MaximumTradeTime"":180,
+			""MaximumActionGap"":30,
+			""DisplayNamePrefix"":""[AutomatedBot] "",
+			""TradePollingInterval"":800,
+			""ConsoleLogLevel"":""Success"",
+			""FileLogLevel"":""Info"",
+			""AutoStart"": true,
+			""SchemaLang"":""en_US""
+		}
+	]
+}";
+
 		private static bool showHelp;
 
 		private static int botIndex = -1;
@@ -56,9 +84,19 @@ namespace SteamBot
 		// This mode is to run a single Bot until it's terminated.
 		private static void BotMode(int botIndex)
 		{
-			if (!File.Exists("settings.json"))
+			if (!Directory.Exists(BotManager.DATA_FOLDER))
+			{
+				Directory.CreateDirectory(BotManager.DATA_FOLDER);
+			}
+
+			if (!File.Exists(BotManager.DATA_FOLDER + "settings.json"))
 			{
 				Console.WriteLine("No settings.json file found.");
+				if (!File.Exists(BotManager.DATA_FOLDER + "settings-template.json"))
+				{
+					File.WriteAllText(BotManager.DATA_FOLDER + "settings-template.json", defSettingsStr);
+				}
+
 				return;
 			}
 
@@ -128,7 +166,7 @@ namespace SteamBot
 
 			manager = new BotManager();
 
-			var loadedOk = manager.LoadConfiguration("settings.json");
+			bool loadedOk = manager.LoadConfiguration("settings.json");
 
 			if (!loadedOk)
 			{
@@ -136,6 +174,13 @@ namespace SteamBot
 					"to 'settings.json' and modify the settings to match your environment");
 				Console.Write("Press Enter to exit...");
 				Console.ReadLine();
+
+				if (!File.Exists(BotManager.DATA_FOLDER + "settings-template.json"))
+				{
+					File.WriteAllText(BotManager.DATA_FOLDER + "settings-template.json", defSettingsStr);
+
+					return;
+				}
 			}
 			else
 			{

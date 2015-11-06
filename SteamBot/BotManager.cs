@@ -15,6 +15,9 @@ namespace SteamBot
 	/// </summary>
 	public class BotManager : IDisposable
 	{
+		public static readonly string DATA_FOLDER = Path.Combine(
+			Environment.GetEnvironmentVariable("appdata"), "SteamBot") + Path.DirectorySeparatorChar;
+
 		private readonly List<RunningBot> botProcs;
 		private Log mainLog;
 		private bool useSeparateProcesses;
@@ -40,12 +43,17 @@ namespace SteamBot
 		/// <param name="configFile"><c>false</c> if there was problems loading the config file.</param>
 		public bool LoadConfiguration(string configFile)
 		{
-			if (!File.Exists(configFile))
+			if (!Directory.Exists(DATA_FOLDER))
+			{
+				Directory.CreateDirectory(DATA_FOLDER);
+			}
+
+			if (!File.Exists(DATA_FOLDER + configFile))
 				return false;
 
 			try
 			{
-				ConfigObject = Configuration.LoadConfiguration(configFile);
+				ConfigObject = Configuration.LoadConfiguration(DATA_FOLDER + configFile);
 			}
 			catch (JsonReaderException)
 			{
@@ -99,14 +107,17 @@ namespace SteamBot
 		/// </summary>
 		public void StopBots()
 		{
-			mainLog.Debug("Shutting down all bot processes.");
-			foreach (var botProc in botProcs)
+			if (mainLog != null)
 			{
-				botProc.Stop();
-			}
+				mainLog.Debug("Shutting down all bot processes.");
+				foreach (var botProc in botProcs)
+				{
+					botProc.Stop();
+				}
 
-			mainLog.Dispose();
-			mainLog = null;
+				mainLog.Dispose();
+				mainLog = null;
+			}
 		}
 
 		/// <summary>
@@ -115,7 +126,7 @@ namespace SteamBot
 		/// <param name="index">A zero-based index.</param>
 		public void StopBot(int index)
 		{
-			mainLog.Debug(String.Format("Killing bot process {0}.", index));
+			mainLog.Debug(string.Format("Killing bot process {0}.", index));
 			if (index < botProcs.Count)
 			{
 				botProcs[index].Stop();
@@ -128,7 +139,7 @@ namespace SteamBot
 		/// <param name="botUserName">The bot's username.</param>
 		public void StopBot(string botUserName)
 		{
-			mainLog.Debug(String.Format("Killing bot with username {0}.", botUserName));
+			mainLog.Debug(string.Format("Killing bot with username {0}.", botUserName));
 
 			var res = from b in botProcs
 					  where b.BotConfig.Username.Equals(botUserName, StringComparison.CurrentCultureIgnoreCase)
@@ -146,7 +157,7 @@ namespace SteamBot
 		/// <param name="index">A zero-based index.</param>
 		public void StartBot(int index)
 		{
-			mainLog.Debug(String.Format("Starting bot at index {0}.", index));
+			mainLog.Debug(string.Format("Starting bot at index {0}.", index));
 
 			if (index < ConfigObject.Bots.Length)
 			{
@@ -160,7 +171,7 @@ namespace SteamBot
 		/// <param name="botUserName">The bot's username.</param>
 		public void StartBot(string botUserName)
 		{
-			mainLog.Debug(String.Format("Starting bot with username {0}.", botUserName));
+			mainLog.Debug(string.Format("Starting bot with username {0}.", botUserName));
 
 			var res = from b in botProcs
 					  where b.BotConfig.Username.Equals(botUserName, StringComparison.CurrentCultureIgnoreCase)
@@ -204,7 +215,7 @@ namespace SteamBot
 		/// <param name="command">The command to be executed</param>
 		public void SendCommand(int index, string command)
 		{
-			mainLog.Debug(String.Format("Sending command \"{0}\" to Bot at index {1}", command, index));
+			mainLog.Debug(string.Format("Sending command \"{0}\" to Bot at index {1}", command, index));
 			if (index < botProcs.Count)
 			{
 				if (botProcs[index].IsRunning)
@@ -224,7 +235,7 @@ namespace SteamBot
 				}
 				else
 				{
-					mainLog.Warn(String.Format("Bot at index {0} is not running. Use the 'Start' command first", index));
+					mainLog.Warn(string.Format("Bot at index {0} is not running. Use the 'Start' command first", index));
 				}
 			}
 			else

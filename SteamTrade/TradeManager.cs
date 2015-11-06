@@ -327,7 +327,7 @@ namespace SteamTrade
 			DateTime actionTimeout = lastOtherActionTime.AddSeconds (MaxActionGapSec);
 			int untilActionTimeout = (int)Math.Round ((actionTimeout - now).TotalSeconds);
 
-			DebugPrint (String.Format ("{0} {1}", actionTimeout, untilActionTimeout));
+			DebugPrint (string.Format ("{0} {1}", actionTimeout, untilActionTimeout));
 
 			DateTime tradeTimeout = tradeStartTime.AddSeconds (MaxTradeTimeSec);
 			int untilTradeTimeout = (int)Math.Round ((tradeTimeout - now).TotalSeconds);

@@ -37,7 +37,7 @@ namespace SteamTrade
 		/// <param name="steamWeb">The SteamWeb instance for this Bot</param>
 		public static dynamic GetInventory(SteamID steamid, SteamWeb steamWeb)
 		{
-			string url = String.Format (
+			string url = string.Format (
 				"http://steamcommunity.com/profiles/{0}/inventory/json/440/2/?trading=1",
 				steamid.ConvertToUInt64 ()
 			);
@@ -84,6 +84,24 @@ namespace SteamTrade
 			return (Items == null ? null : Items.FirstOrDefault(item => item.Id == id));
 		}
 
+		public TF2Value TotalPure()
+		{
+			List<Item> keys = GetItemsByDefindex(TF2Value.KEY_DEFINDEX);
+			List<Item> refined = GetItemsByDefindex(TF2Value.REFINED_DEFINDEX);
+			List<Item> rec = GetItemsByDefindex(TF2Value.RECLAIMED_DEFINDEX);
+			List<Item> scrap = GetItemsByDefindex(TF2Value.SCRAP_DEFINDEX);
+
+			keys.RemoveAll((i) => i.IsNotTradeable);
+
+			TF2Value res = TF2Value.Zero;
+			res += TF2Value.Key * keys.Count;
+			res += TF2Value.Refined * refined.Count;
+			res += TF2Value.Reclaimed * rec.Count;
+			res += TF2Value.Scrap * scrap.Count;
+
+			return res;
+		}
+
 		public List<Item> GetItemsByDefindex (int defindex)
 		{
 			// Check for Private Inventory
@@ -91,6 +109,16 @@ namespace SteamTrade
 				throw new Exceptions.TradeException("Unable to access Inventory: Inventory is Private!");
 
 			return Items.Where(item => item.Defindex == defindex).ToList();
+		}
+
+		public List<Item> GetItemsByDefindexAndQuality(int defindex, int quality)
+		{
+			if (IsPrivate)
+			{
+				throw new Exceptions.TradeException("Unable to access Inventory: Inventory is Private!");
+			}
+
+			return Items.Where((i) => i.Defindex == defindex && i.Quality == quality).ToList();
 		}
 
 		public class Item
@@ -137,25 +165,25 @@ namespace SteamTrade
 			[JsonProperty("contained_item")]
 			public Item ContainedItem { get; set; }
 
-            public bool HasKillstreak()
-            {
-                ItemAttribute att = Attributes.FirstOrDefault((a) => a.Defindex == ItemAttribute.KILLSTREAK_DEFINDEX);
+			public bool HasKillstreak()
+			{
+				ItemAttribute att = Attributes.FirstOrDefault((a) => a.Defindex == ItemAttribute.KILLSTREAK_DEFINDEX);
 
-                return att != null;
-            }
+				return att != null;
+			}
 
-            public bool HasPaint()
-            {
-                ItemAttribute att = Attributes.FirstOrDefault((a) => a.Defindex == ItemAttribute.PAINT_DEFINDEX);
+			public bool HasPaint()
+			{
+				ItemAttribute att = Attributes.FirstOrDefault((a) => a.Defindex == ItemAttribute.PAINT_DEFINDEX);
 
-                return att != null;
-            }
+				return att != null;
+			}
 		}
 
 		public class ItemAttribute
 		{
-            public const ushort KILLSTREAK_DEFINDEX = 2025;
-            public const ushort PAINT_DEFINDEX = 142;
+			public const ushort KILLSTREAK_DEFINDEX = 2025;
+			public const ushort PAINT_DEFINDEX = 142;
 
 			[JsonProperty("defindex")]
 			public ushort Defindex { get; set; }

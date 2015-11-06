@@ -72,6 +72,7 @@
     <Compile Include="ChatCommands\IChatCommand.cs" />
     <Compile Include="ChatHandler.cs" />
     <Compile Include="Notifications.cs" />
+    <Compile Include="Order.cs" />
     <Compile Include="OrderManager.cs" />
     <Compile Include="SimpleWeapons.cs" />
     <Compile Include="SteamGroups\CMsgInviteUserToGroup.cs" />

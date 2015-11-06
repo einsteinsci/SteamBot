@@ -15,8 +15,8 @@ namespace SteamTrade
 		private const int SCRAP_PER_RECLAIMED = 3;
 		private const int SCRAP_PER_REFINED = SCRAP_PER_RECLAIMED * RECLAIMED_PER_REFINED;
 		private const int RECLAIMED_PER_REFINED = 3;
-        private const int REFINED_PER_KEY = 16;
-        private const int GRAIN_PER_KEY = GRAIN_PER_REFINED * REFINED_PER_KEY;
+		private const int REFINED_PER_KEY = 16;
+		private const int GRAIN_PER_KEY = GRAIN_PER_REFINED * REFINED_PER_KEY;
 
 		public const ushort SCRAP_DEFINDEX = 5000;
 		public const ushort RECLAIMED_DEFINDEX = 5001;
@@ -34,7 +34,7 @@ namespace SteamTrade
 		public static readonly TF2Value Scrap = Grain * GRAIN_PER_SCRAP;
 		public static readonly TF2Value Reclaimed = Grain * GRAIN_PER_RECLAIMED;
 		public static readonly TF2Value Refined = Grain * GRAIN_PER_REFINED;
-        public static readonly TF2Value Key = Grain * GRAIN_PER_KEY;
+		public static readonly TF2Value Key = Grain * GRAIN_PER_KEY;
 
 		private readonly int _numGrains;
 
@@ -193,7 +193,7 @@ namespace SteamTrade
 			string returnValue = "";
 			if(numItems > 0)
 			{
-				returnValue += String.Format("{0} {1}", numItems, numItems > 1 ? itemNamePlural : itemName);
+				returnValue += string.Format("{0} {1}", numItems, numItems > 1 ? itemNamePlural : itemName);
 			}
 
 			if(leftovers > Zero && !roundDown)
@@ -214,7 +214,7 @@ namespace SteamTrade
 		/// </summary>
 		public string ToRefString()
 		{
-			return String.Format("{0}{1} ref", RefinedPart, (RefinedPartDecimal > 0 ? "." + RefinedPartDecimal : ""));
+			return string.Format("{0}{1} ref", RefinedPart, (RefinedPartDecimal > 0 ? "." + RefinedPartDecimal : ""));
 		}
 
 		/// <summary>
