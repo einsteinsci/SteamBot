@@ -14,14 +14,15 @@ namespace SteamBot
 	/// </summary>
 	public class AdminUserHandler : UserHandler
 	{
-		private const string AddCmd = "add";
-		private const string RemoveCmd = "remove";
-		private const string HelpCmd = "help";
+		private const string ADD_CMD = "add";
+		private const string REMOVE_CMD = "remove";
+		private const string HELP_CMD = "help";
 
-		private const string AddCratesSubCmd = "crates";
-		private const string AddWepsSubCmd = "weapons";
-		private const string AddMetalSubCmd = "metal";
-		private const string AddAllSubCmd = "all";
+		private const string ADD_CRATE_SUB = "crates";
+		private const string ADD_WEAPS_SUB = "weapons";
+		private const string ADD_METAL_SUB = "metal";
+		private const string ADD_ALL_SUB = "all";
+		private const string ADD_ITEMS_SUB = "items";
 
 		public AdminUserHandler(Bot bot, SteamID sid) : base(bot, sid)
 		{ }
@@ -141,17 +142,17 @@ namespace SteamBot
 
 		public override void OnTradeInit()
 		{
-			SendTradeMessage("Success. (Type {0} for commands)", HelpCmd);
+			SendTradeMessage("Success. (Type {0} for commands)", HELP_CMD);
 		}
 
 		public override void OnTradeAddItem(Schema.Item schemaItem, Inventory.Item inventoryItem)
 		{
-			// whatever.   
+			Log.Info("Admin added item to trade: " + schemaItem.ItemName);
 		}
 
 		public override void OnTradeRemoveItem(Schema.Item schemaItem, Inventory.Item inventoryItem)
 		{
-			// whatever.
+			Log.Info("Admin removed item from trade: " + schemaItem.ItemName);
 		}
 
 		public override void OnTradeMessage(string message)
@@ -204,18 +205,18 @@ namespace SteamBot
 
 		private void ProcessTradeMessage(string message)
 		{
-			if (message.Equals(HelpCmd))
+			if (message.Equals(HELP_CMD) || message.Trim() == "?")
 			{
 				PrintHelpMessage();
 				return;
 			}
 
-			if (message.StartsWith(AddCmd))
+			if (message.StartsWith(ADD_CMD))
 			{
 				HandleAddCommand(message);
 				SendTradeMessage("Done adding.");
 			}
-			else if (message.StartsWith(RemoveCmd))
+			else if (message.StartsWith(REMOVE_CMD))
 			{
 				HandleRemoveCommand(message);
 				SendTradeMessage("Done removing.");
@@ -225,27 +226,37 @@ namespace SteamBot
 		private void PrintHelpMessage()
 		{
 			SendTradeMessage("{0} {1} [amount] [series] - adds all crates " +
-				"(optionally by series number, use 0 for amount to add all)", AddCmd, AddCratesSubCmd);
-			SendTradeMessage("{0} {1} [amount] - adds metal", AddCmd, AddMetalSubCmd);
-			SendTradeMessage("{0} {1} [amount] - adds weapons", AddCmd, AddWepsSubCmd);
-			SendTradeMessage("{0} {1} [amount] - adds items", AddCmd, AddAllSubCmd);
-			SendTradeMessage("{0} <craft_material_type> [amount] - adds all or a given amount of items of a given crafting type.", AddCmd);
-			SendTradeMessage("{0} <defindex> [amount] - adds all or a given amount of items of a given defindex.", AddCmd);
+				"(optionally by series number, use 0 for amount to add all)", ADD_CMD, ADD_CRATE_SUB);
+			SendTradeMessage("{0} {1} [amount] - adds metal", ADD_CMD, ADD_METAL_SUB);
+			SendTradeMessage("{0} {1} [amount] - adds weapons", ADD_CMD, ADD_WEAPS_SUB);
+			SendTradeMessage("{0} {1} [amount] - adds everything", ADD_CMD, ADD_ALL_SUB);
+			SendTradeMessage("{0} {1} [amount] - adds (non-pure) items", ADD_CMD, ADD_ITEMS_SUB);
+			SendTradeMessage("{0} <craft_material_type> [amount] - adds all or a given amount of items of a given crafting type.", ADD_CMD);
+			SendTradeMessage("{0} <defindex> [amount] - adds all or a given amount of items of a given defindex.", ADD_CMD);
 
-			SendTradeMessage("See http://wiki.teamfortress.com/wiki/WebAPI/GetSchema for info about craft_material_type or defindex.");
+			//SendTradeMessage("See http://wiki.teamfortress.com/wiki/WebAPI/GetSchema for info about craft_material_type or defindex.");
 		}
 
 		private void HandleAddCommand(string command)
 		{
-			var data = command.Split(' ');
+			string[] args = command.Split(' ');
 			string typeToAdd;
 
-			bool subCmdOk = GetSubCommand(data, out typeToAdd);
+			bool subCmdOk = GetSubCommand(args, out typeToAdd);
 
 			if (!subCmdOk)
 				return;
 
-			uint amount = GetAddAmount(data);
+			uint amount = GetAddAmount(args);
+
+			if (typeToAdd.ToLower() == "key")
+				typeToAdd = TF2Value.KEY_DEFINDEX.ToString();
+			else if (typeToAdd.ToLower() == "ref" || typeToAdd.ToLower() == "refined")
+				typeToAdd = TF2Value.REFINED_DEFINDEX.ToString();
+			else if (typeToAdd.ToLower() == "rec" || typeToAdd.ToLower() == "reclaimed")
+				typeToAdd = TF2Value.RECLAIMED_DEFINDEX.ToString();
+			else if (typeToAdd.ToLower() == "scrap")
+				typeToAdd = TF2Value.SCRAP_DEFINDEX.ToString();
 
 			// if user supplies the defindex directly use it to add.
 			int defindex;
@@ -257,20 +268,23 @@ namespace SteamBot
 
 			switch (typeToAdd)
 			{
-				case AddMetalSubCmd:
+				case ADD_METAL_SUB:
 					AddItemsByCraftType("craft_bar", amount);
 					break;
-				case AddWepsSubCmd:
+				case ADD_ITEMS_SUB:
+					AddAllNonPure();
+					break;
+				case ADD_WEAPS_SUB:
 					AddItemsByCraftType("weapon", amount);
 					break;
-				case AddCratesSubCmd:
+				case ADD_CRATE_SUB:
 					// data[3] is the optional series number
-					if (!string.IsNullOrEmpty(data[3]))
-						AddCrateBySeries(data[3], amount);
+					if (!string.IsNullOrEmpty(args[3]))
+						AddCrateBySeries(args[3], amount);
 					else
 						AddItemsByCraftType("supply_crate", amount);
 					break;
-				case AddAllSubCmd:
+				case ADD_ALL_SUB:
 					AddAllItems();
 					break;
 				default:
@@ -343,11 +357,24 @@ namespace SteamBot
 
 		private void AddAllItems()
 		{
-			var items = Trade.CurrentSchema.GetItems();
+			List<Schema.Item> items = Trade.CurrentSchema.GetItems();
 
-			foreach (var item in items)
+			foreach (Schema.Item item in items)
 			{
-				Trade.AddAllItemsByDefindex(item.Defindex, 0);
+				Trade.AddAllItemsByDefindex(item.Defindex);
+			}
+		}
+
+		private void AddAllNonPure()
+		{
+			List<Schema.Item> items = Trade.CurrentSchema.GetItems();
+
+			foreach (Schema.Item item in items)
+			{
+				if (!item.IsPure())
+				{
+					Trade.AddAllItemsByDefindex(item.Defindex);
+				}
 			}
 		}
 

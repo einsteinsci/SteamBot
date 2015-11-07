@@ -52,10 +52,7 @@ namespace SteamTrade
 		/// The maximum trade time.
 		/// </value>
 		public int MaxTradeTimeSec
-		{
-			get;
-			private set;
-		}
+		{ get; private set; }
 
 		/// <summary>
 		/// Gets or the maxmium amount of time the bot will wait between actions. 
@@ -64,19 +61,13 @@ namespace SteamTrade
 		/// The maximum action gap.
 		/// </value>
 		public int MaxActionGapSec
-		{
-			get;
-			private set;
-		}
+		{ get; private set; }
 		
 		/// <summary>
 		/// Gets the Trade polling interval in milliseconds.
 		/// </summary>
 		public int TradePollingInterval
-		{
-			get;
-			private set;
-		}
+		{ get; private set; }
 
 		/// <summary>
 		/// Gets the inventory of the bot.
@@ -93,7 +84,7 @@ namespace SteamTrade
 
 				myInventoryTask.Wait();
 				return myInventoryTask.Result;
-		}
+			}
 		}
 
 		/// <summary>
@@ -111,7 +102,7 @@ namespace SteamTrade
 
 				otherInventoryTask.Wait();
 				return otherInventoryTask.Result;
-		}
+			}
 		}
 
 		/// <summary>
@@ -121,10 +112,7 @@ namespace SteamTrade
 		/// <c>true</c> if the trade thread running; otherwise, <c>false</c>.
 		/// </value>
 		public bool IsTradeThreadRunning
-		{
-			get;
-			internal set;
-		}
+		{ get; internal set; }
 
 		#endregion Public Properties
 
@@ -316,7 +304,7 @@ namespace SteamTrade
 			pollThread.Start();
 		}
 
-		private bool CheckTradeTimeout (Trade trade)
+		private bool CheckTradeTimeout(Trade trade)
 		{
 			// User has accepted the trade. Disregard time out.
 			if (trade.OtherUserAccepted)
@@ -324,34 +312,35 @@ namespace SteamTrade
 
 			var now = DateTime.Now;
 
-			DateTime actionTimeout = lastOtherActionTime.AddSeconds (MaxActionGapSec);
-			int untilActionTimeout = (int)Math.Round ((actionTimeout - now).TotalSeconds);
+			DateTime actionTimeout = lastOtherActionTime.AddSeconds(MaxActionGapSec);
+			int untilActionTimeout = (int)Math.Round((actionTimeout - now).TotalSeconds);
 
-			DebugPrint (string.Format ("{0} {1}", actionTimeout, untilActionTimeout));
+			DebugPrint(string.Format ("{0} {1}", actionTimeout, untilActionTimeout));
 
-			DateTime tradeTimeout = tradeStartTime.AddSeconds (MaxTradeTimeSec);
-			int untilTradeTimeout = (int)Math.Round ((tradeTimeout - now).TotalSeconds);
+			DateTime tradeTimeout = tradeStartTime.AddSeconds(MaxTradeTimeSec);
+			int untilTradeTimeout = (int)Math.Round((tradeTimeout - now).TotalSeconds);
 
 			double secsSinceLastTimeoutMessage = (now - lastTimeoutMessage).TotalSeconds;
 
 			if (untilActionTimeout <= 0 || untilTradeTimeout <= 0)
 			{
-				DebugPrint ("timed out...");
+				DebugPrint("Trade timed out...");
 
 				if (OnTimeout != null)
 				{
 					OnTimeout (this, null);
 				}
 
-				trade.CancelTrade ();
+				trade.CancelTrade();
 
 				return true;
 			}
-			else if (untilActionTimeout <= 20 && secsSinceLastTimeoutMessage >= 10)
+			else if (untilActionTimeout <= 30 && secsSinceLastTimeoutMessage >= 10)
 			{
 				try
 				{
-					trade.SendMessage("Are You AFK? The trade will be canceled in " + untilActionTimeout + " seconds if you don't do something.");
+					trade.SendMessage("Are you still there? The trade will be canceled in " + untilActionTimeout + 
+						" seconds if you do not respond.");
 				}
 				catch { }
 				lastTimeoutMessage = now;
@@ -359,14 +348,14 @@ namespace SteamTrade
 			return false;
 		}
 
-		[Conditional ("DEBUG_TRADE_MANAGER")]
+		[Conditional("DEBUG_TRADE_MANAGER")]
 		private static void DebugPrint (string output)
 		{
 			// I don't really want to add the Logger as a dependecy to TradeManager so I 
 			// print using the console directly. To enable this for debugging put this:
 			// #define DEBUG_TRADE_MANAGER
 			// at the first line of this file.
-			System.Console.WriteLine (output);
+			Console.WriteLine (output);
 		}
 	}
 }

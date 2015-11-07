@@ -13,7 +13,7 @@ namespace SteamTrade
 	/// <summary>
 	/// Class which represents a trade.
 	/// Note that the logic that Steam uses can be seen from their web-client source-code:
-    /// http://steamcommunity-a.akamaihd.net/public/javascript/economy_trade.js
+	/// http://steamcommunity-a.akamaihd.net/public/javascript/economy_trade.js
 	/// </summary>
 	public partial class Trade
 	{
@@ -358,6 +358,19 @@ namespace SteamTrade
 			foreach(Inventory.Item item in items)
 			{
 				if(item != null && myOfferedItemsLocalCopy.Values.All(o => o.assetid != item.Id) && !item.IsNotTradeable)
+				{
+					return AddItem(item.Id);
+				}
+			}
+			return false;
+		}
+		public bool AddItemByDefindex(int defindex, int quality)
+		{
+			List<Inventory.Item> items = MyInventory.GetItemsByDefindex(defindex);
+			foreach(Inventory.Item item in items)
+			{
+				if(item != null && myOfferedItemsLocalCopy.Values.All(o => o.assetid != item.Id) && 
+					!item.IsNotTradeable && item.Quality == quality)
 				{
 					return AddItem(item.Id);
 				}

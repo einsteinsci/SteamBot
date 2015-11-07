@@ -18,7 +18,7 @@ namespace SteamBot
 		public TF2Value Price => TF2Value.FromRef(PriceRef);
 
 		[JsonProperty]
-		public ushort ItemID
+		public ushort Defindex
 		{ get; private set; }
 
 		[JsonProperty]
@@ -45,11 +45,22 @@ namespace SteamBot
 		public int MaxStock
 		{ get; private set; }
 
+		public Order()
+		{
+			PriceRef = 0;
+			Defindex = 0;
+			Quality = 6;
+			MaxStock = 5;
+			Craftable = true;
+			AllowKillstreaks = false;
+			AllowPaint = false;
+		}
+
 		public Order(TF2Value price, Schema.Item item, int quality = 6, int maxStock = 5, bool craftable = true, 
 			bool allowKS = false, bool allowPaint = false)
 		{
 			PriceRef = price.RefinedTotal;
-			ItemID = item.Defindex;
+			Defindex = item.Defindex;
 			Quality = quality;
 			MaxStock = maxStock;
 			Craftable = craftable;
@@ -136,14 +147,25 @@ namespace SteamBot
 
 		public bool MatchesItem(Inventory.Item item)
 		{
-			return item.Defindex == ItemID && item.Quality == Quality &&
+			return item.Defindex == Defindex && item.Quality == Quality &&
 				   item.IsNotCraftable != Craftable &&
 				   item.HasKillstreak() == AllowKillstreaks && item.HasPaint() == AllowPaint;
 		}
 
-		public string ToString(bool buyOrder, Schema schema)
+		public string GetSearchString(Schema schema)
 		{
-			string itemName = schema.GetItem(ItemID).ItemName;
+			string itemName = schema.GetItem(Defindex).ItemName;
+
+			string res = GetQualityString(Quality) + itemName;
+			if (!Craftable)
+				res += "Non-craftable " + res;
+
+			return res;
+		}
+
+		public string ToString(Schema schema)
+		{
+			string itemName = schema.GetItem(Defindex).ItemName;
 
 			string res = GetQualityString(Quality) + itemName + " for " + Price.ToString();
 			if (!Craftable)
@@ -153,7 +175,7 @@ namespace SteamBot
 			if (AllowPaint)
 				res += " (Paint allowed)";
 
-			if (buyOrder)
+			if (IsBuyOrder)
 			{
 				res = "Buying " + res;
 			}

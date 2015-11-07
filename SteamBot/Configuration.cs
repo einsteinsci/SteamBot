@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SteamKit2;
 
 namespace SteamBot
 {
@@ -17,22 +19,23 @@ namespace SteamBot
 			static Regex Steam2Regex = new Regex(
 			   @"STEAM_(?<universe>[0-5]):(?<authserver>[0-1]):(?<accountid>\d+)",
 			   RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 			public override bool CanConvert(Type objectType)
 			{
-				return objectType == typeof(IEnumerable<SteamKit2.SteamID>);
+				return objectType == typeof(IEnumerable<SteamID>);
 			}
 
 			public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 			{
 				JArray array = JArray.Load(reader);
-				List<SteamKit2.SteamID> ret = new List<SteamKit2.SteamID>();
+				List<SteamID> ret = new List<SteamID>();
 				foreach (JToken id in array)
 				{
 					string sID = (string)id;
 					if (Steam2Regex.IsMatch(sID))
-						ret.Add(new SteamKit2.SteamID(sID));
+						ret.Add(new SteamID(sID));
 					else
-						ret.Add(new SteamKit2.SteamID((ulong)id));
+						ret.Add(new SteamID((ulong)id));
 				}
 				return ret;
 			}
@@ -43,7 +46,7 @@ namespace SteamBot
 			}
 		}
 
-		public static Configuration LoadConfiguration (string filename)
+		public static Configuration LoadConfiguration(string filename)
 		{
 			TextReader reader = new StreamReader(filename);
 			string json = reader.ReadToEnd();
@@ -51,7 +54,7 @@ namespace SteamBot
 
 			Configuration config =  JsonConvert.DeserializeObject<Configuration>(json);
 
-			config.Admins = config.Admins ?? new SteamKit2.SteamID[0];
+			config.Admins = config.Admins ?? new SteamID[0];
 
 			// merge bot-specific admins with global admins
 			foreach (BotInfo bot in config.Bots)
@@ -77,7 +80,8 @@ namespace SteamBot
 		/// listed in the Bots array.
 		/// </value>
 		[JsonConverter(typeof(JsonToSteamID))]
-		public IEnumerable<SteamKit2.SteamID> Admins { get; set; }
+		public IEnumerable<SteamID> Admins
+		{ get; set; }
 
 		/// <summary>
 		/// Gets or sets the bots array.
@@ -86,7 +90,8 @@ namespace SteamBot
 		/// The Bots object is an array of BotInfo objects containing
 		///  information about each individual bot you will be running. 
 		/// </value>
-		public BotInfo[] Bots { get; set; }
+		public BotInfo[] Bots
+		{ get; set; }
 
 		/// <summary>
 		/// Gets or sets YOUR API key.
@@ -96,12 +101,14 @@ namespace SteamBot
 		/// one, it can be requested from Value at their Web API Key page. This
 		/// is required and the bot(s) will not work without an API Key. 
 		/// </value>
-		public string ApiKey { get; set; }
+		public string ApiKey
+		{ get; set; }
 
 		/// <summary>
 		/// Gets or sets the main log file name.
 		/// </summary>
-		public string MainLog { get; set; }
+		public string MainLog
+		{ get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to use separate processes.
@@ -111,7 +118,8 @@ namespace SteamBot
 		/// otherwise, <c>false</c> to open each bot in a separate thread.
 		/// Default is <c>false</c>.
 		/// </value>
-		public bool UseSeparateProcesses { get; set; }
+		public bool UseSeparateProcesses
+		{ get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to auto start all bots.
@@ -120,7 +128,8 @@ namespace SteamBot
 		/// <c>true</c> to make the bots start on program load; otherwise,
 		/// <c>false</c> to not start them.
 		/// </value>
-		public bool AutoStartAllBots { get; set; }
+		public bool AutoStartAllBots
+		{ get; set; }
 
 		#endregion Top-level config properties
 
@@ -133,7 +142,7 @@ namespace SteamBot
 		public override string ToString()
 		{
 			StringBuilder sb = new StringBuilder();
-			var fields = this.GetType().GetProperties();
+			var fields = GetType().GetProperties();
 
 			foreach (var propInfo in fields)
 			{
@@ -147,25 +156,56 @@ namespace SteamBot
 
 		public class BotInfo
 		{
-			public string Username { get; set; }
-			public string Password { get; set; }
-			public string ApiKey { get; set; }
-			public string DisplayName { get; set; }
-			public string ChatResponse { get; set; }
-			public string LogFile { get; set; }
-			public string BotControlClass { get; set; }
-			public int MaximumTradeTime { get; set; }
-			public int MaximumActionGap { get; set; }
-			public string DisplayNamePrefix { get; set; }
-			public int TradePollingInterval { get; set; }
-			public string ConsoleLogLevel { get; set; }
-			public string FileLogLevel { get; set; }
+			public string Username
+			{ get; set; }
+
+			//[JsonIgnore]
+			//public SecureString Password
+			//{ get; set; }
+
+			public string ApiKey
+			{ get; set; }
+
+			public string DisplayName
+			{ get; set; }
+
+			public string ChatResponse
+			{ get; set; }
+
+			public string LogFile
+			{ get; set; }
+
+			public string BotControlClass
+			{ get; set; }
+
+			public int MaximumTradeTime
+			{ get; set; }
+
+			public int MaximumActionGap
+			{ get; set; }
+
+			public string DisplayNamePrefix
+			{ get; set; }
+
+			public int TradePollingInterval
+			{ get; set; }
+
+			public string ConsoleLogLevel
+			{ get; set; }
+
+			public string FileLogLevel
+			{ get; set; }
+
 			[JsonConverter(typeof(JsonToSteamID))]
-			public IEnumerable<SteamKit2.SteamID> Admins { get; set; }
-			public string SchemaLang { get; set; }
+			public IEnumerable<SteamID> Admins
+			{ get; set; }
+
+			public string SchemaLang
+			{ get; set; }
 
 			// Depreciated configuration options
-			public string LogLevel { get; set; }
+			public string LogLevel
+			{ get; set; }
 
 			/// <summary>
 			/// Gets or sets a value indicating whether to auto start this bot.
@@ -177,14 +217,15 @@ namespace SteamBot
 			/// If <see cref="SteamBot.Configuration.AutoStartAllBots "/> is true,
 			/// then this property has no effect and is ignored.
 			/// </remarks>
-			[JsonProperty (Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate)]
-			[DefaultValue (true)]
-			public bool AutoStart { get; set; }
+			[JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate)]
+			[DefaultValue(true)]
+			public bool AutoStart
+			{ get; set; }
 
 			public override string ToString()
 			{
 				StringBuilder sb = new StringBuilder();
-				var fields = this.GetType().GetProperties();
+				var fields = GetType().GetProperties();
 
 				foreach (var propInfo in fields)
 				{

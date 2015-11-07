@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using SteamBot.ChatCommands;
@@ -17,8 +18,23 @@ namespace SteamBot
 		{
 			ChatCommands = new List<IChatCommand>();
 
-			ChatCommands.Add(new CmdTrade());
-			ChatCommands.Add(new CmdHelp());
+			List<Type> allCommandTypes = ChatCommandAttribute.GetAllUsingTypes(
+				Assembly.GetAssembly(typeof(ChatHandler)));
+
+			foreach (Type t in allCommandTypes)
+			{
+				IChatCommand cmd = Activator.CreateInstance(t) as IChatCommand;
+
+				if (cmd != null)
+				{
+					ChatCommands.Add(cmd);
+				}
+				else
+				{
+					Console.ForegroundColor = ConsoleColor.Red;
+					Console.WriteLine("[ERROR]: Chat command type does not inherit from IChatCommand: " + t.Name);
+				}
+			}
 		}
 
 		public static bool RunCommand(string cmdName, List<string> args, UserHandler handler)
@@ -51,43 +67,6 @@ namespace SteamBot
 		static void sendChatMessage(UserHandler handler, string message)
 		{
 			handler.Bot.SteamFriends.SendChatMessage(handler.OtherSID, EChatEntryType.ChatMsg, message);
-		}
-
-		public class CmdHelp : IChatCommand
-		{
-			public string CommandName => "help";
-			public string Purpose => "Lists all available commands";
-			public string Syntax => "help [command]";
-
-			public bool IsAdminOnly => false;
-
-			public bool RunCommand(List<string> args, UserHandler handler, Action<string> sendMsg)
-			{
-				if (args.Count > 0)
-				{
-					string cmdName = args[0];
-
-					foreach (IChatCommand cmd in ChatCommands)
-					{
-						if (cmd.CommandName == cmdName)
-						{
-
-						}
-					}
-				}
-
-				foreach (IChatCommand cmd in ChatCommands)
-				{
-					string result = cmd.Syntax + ": " + cmd.Purpose;
-					if (cmd.IsAdminOnly)
-					{
-						result = "[ADMIN] " + result;
-					}
-
-					sendMsg(result);
-				}
-				return true;
-			}
 		}
 	}
 }

@@ -102,7 +102,7 @@ namespace SteamTrade
 			return res;
 		}
 
-		public List<Item> GetItemsByDefindex (int defindex)
+		public List<Item> GetItemsByDefindex(int defindex)
 		{
 			// Check for Private Inventory
 			if( this.IsPrivate )
@@ -111,7 +111,7 @@ namespace SteamTrade
 			return Items.Where(item => item.Defindex == defindex).ToList();
 		}
 
-		public List<Item> GetItemsByDefindexAndQuality(int defindex, int quality)
+		public List<Item> GetItemsByDefindex(int defindex, int quality)
 		{
 			if (IsPrivate)
 			{

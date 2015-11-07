@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SteamBot.ChatCommands
 {
+	[ChatCommand]
 	public class CmdTrade : IChatCommand
 	{
 		public string CommandName => "trade";

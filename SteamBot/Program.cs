@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Win32;
 using NDesk.Options;
 
 namespace SteamBot
@@ -15,7 +17,7 @@ namespace SteamBot
 				{ "help", "shows this help text", p => showHelp = (p != null) }
 		};
 
-		
+		#region defaultSettings
 		private static string defSettingsStr = @"{
 ""Admins"":[""234567""],
 ""ApiKey"":""Steam API Key goes here!"",
@@ -42,12 +44,21 @@ namespace SteamBot
 		}
 	]
 }";
+		#endregion defaultSettings
 
 		private static bool showHelp;
 
 		private static int botIndex = -1;
 		private static BotManager manager;
 		private static bool isclosing = false;
+
+		internal static Task<string> ConsoleReadLineTask
+		{ get; private set; }
+
+		public static bool IsMaskedInput
+		{ get; internal set; }
+		public static Bot PasswordRequestingBot
+		{ get; internal set; }
 
 		[STAThread]
 		public static void Main(string[] args)
@@ -193,8 +204,8 @@ namespace SteamBot
 
 					if (!startedOk)
 					{
-						Console.WriteLine(
-							"Error starting the bots because either the configuration was bad or because the log file was not opened.");
+						Console.WriteLine("Error starting the bots because either the configuration was bad " +
+							"or because the log file was not opened.");
 						Console.Write("Press Enter to exit...");
 						Console.ReadLine();
 					}
@@ -216,30 +227,94 @@ namespace SteamBot
 
 				var bmi = new BotManagerInterpreter(manager);
 
+				ConsoleReadLineTask = Console.In.ReadLineAsync();
+
 				// command interpreter loop.
 				do
 				{
-					string inputText = Console.ReadLine();
-
-					if (string.IsNullOrEmpty(inputText))
-						continue;
-
-					if (inputText.ToLower() == "exit")
+					if (ConsoleReadLineTask.IsCompleted)
 					{
-						Console.ForegroundColor = ConsoleColor.Yellow;
-						Console.WriteLine("Exiting bot manager...");
+						if (!IsMaskedInput)
+						{
+							string inputText = ConsoleReadLineTask.Result;
 
-						manager.StopBots();
-						isclosing = true;
-						break;
+							if (string.IsNullOrEmpty(inputText))
+								continue;
+
+							if (inputText.ToLower() == "exit")
+							{
+								Console.ForegroundColor = ConsoleColor.Yellow;
+								Console.WriteLine("Exiting bot manager...");
+
+								manager.StopBots();
+								isclosing = true;
+								break;
+							}
+
+							if (inputText.ToLower() == "clearpassword")
+							{
+								Console.ForegroundColor = ConsoleColor.White;
+								Console.WriteLine("Clearing saved passwords...");
+								Console.WriteLine("You will need to re-enter it next time you log in.");
+
+								ClearSavedPasswords();
+							}
+
+							bmi.CommandInterpreter(inputText);
+
+							Console.Write("botmgr> ");
+							ConsoleReadLineTask = Console.In.ReadLineAsync();
+						}
+						else
+						{
+							// get masked input
+							PasswordRequestingBot.DoSetPassword();
+							IsMaskedInput = false;
+							PasswordRequestingBot = null;
+
+							ConsoleReadLineTask = Console.In.ReadLineAsync();
+						}
 					}
-
-					bmi.CommandInterpreter(inputText);
-
-					Console.Write("botmgr > ");
 
 				} while (!isclosing);
 			}
+		}
+
+		private static void ClearSavedPasswords()
+		{
+			RegistryKey key = Registry.CurrentUser.OpenSubKey(Bot.REGISTRY_KEY_PATH, true);
+
+			if (key != null && key.SubKeyCount > 0)
+			{
+				string[] subkeys = key.GetSubKeyNames();
+
+				Console.ForegroundColor = ConsoleColor.DarkGray;
+				foreach (string k in subkeys)
+				{
+					RegistryKey sub = key.OpenSubKey(k, true);
+					foreach (string v in sub.GetValueNames())
+					{
+						sub.DeleteValue(v);
+					}
+					sub.Close();
+					sub = null;
+
+					key.DeleteSubKey(k);
+					Console.WriteLine("Deleted subkeys for user {0}.", k);
+				}
+
+				Console.ForegroundColor = ConsoleColor.Green;
+				Console.WriteLine("Deleted all saved passwords.");
+				Console.ForegroundColor = ConsoleColor.White;
+			}
+			else
+			{
+				Console.ForegroundColor = ConsoleColor.Yellow;
+				Console.WriteLine("Could not delete saved password as none was found.");
+				Console.ForegroundColor = ConsoleColor.White;
+			}
+
+			key.Close();
 		}
 
 		#endregion Bot Modes

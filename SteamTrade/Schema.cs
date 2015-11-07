@@ -26,7 +26,7 @@ namespace SteamTrade
 		/// <remarks>
 		/// The schema will be cached for future use if it is updated.
 		/// </remarks>
-		public static Schema FetchSchema (string apiKey, string schemaLang = null)
+		public static Schema FetchSchema(string apiKey, string schemaLang = null)
 		{   
 			var url = SchemaApiUrlBase + apiKey;
 			if (schemaLang != null)
@@ -34,7 +34,7 @@ namespace SteamTrade
 
 			// just let one thread/proc do the initial check/possible update.
 			bool wasCreated;
-			var mre = new EventWaitHandle(false, 
+			EventWaitHandle mre = new EventWaitHandle(false, 
 				EventResetMode.ManualReset, SchemaMutexName, out wasCreated);
 
 			// the thread that create the wait handle will be the one to 
@@ -49,17 +49,33 @@ namespace SteamTrade
 				}
 			}
 
-			using(HttpWebResponse response = new SteamWeb().Request(url, "GET"))
+			try
 			{
-				DateTime schemaLastModified = response.LastModified;
+				using (HttpWebResponse response = (new SteamWeb()).Request(url, "GET"))
+				{
+					DateTime schemaLastModified = response.LastModified;
 
-				string result = GetSchemaString(response, schemaLastModified);
+					string result = GetSchemaString(response, schemaLastModified);
 
-				// were done here. let others read.
+					// were done here. let others read.
+					mre.Set();
+
+					SchemaResult schemaResult = JsonConvert.DeserializeObject<SchemaResult>(result);
+					return schemaResult?.result ?? null;
+				}
+			}
+			catch (WebException e)
+			{
+				Console.ForegroundColor = ConsoleColor.Red;
+				Console.WriteLine("[ERROR] Failed to download schema ({0}). Retrieving from file cache.", 
+					e.Message);
+				Console.ForegroundColor = ConsoleColor.White;
+
+				string result = GetSchemaString(null, DateTime.Now);
 				mre.Set();
 
 				SchemaResult schemaResult = JsonConvert.DeserializeObject<SchemaResult>(result);
-				return schemaResult.result ?? null;
+				return schemaResult?.result ?? null;
 			}
 		}
 
@@ -67,9 +83,10 @@ namespace SteamTrade
 		private static string GetSchemaString(HttpWebResponse response, DateTime schemaLastModified)
 		{
 			string result;
-			bool mustUpdateCache = !File.Exists(cachefile) || schemaLastModified > File.GetCreationTime(cachefile);
+			bool mustUpdateCache = !File.Exists(cachefile) || 
+				schemaLastModified > File.GetCreationTime(cachefile);
 
-			if (mustUpdateCache)
+			if (mustUpdateCache && response != null)
 			{
 				using(var reader = new StreamReader(response.GetResponseStream()))
 				{
