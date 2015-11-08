@@ -66,6 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bot.EventManager.cs" />
     <Compile Include="ChatCommands\ChatCommandAttribute.cs" />
     <Compile Include="ChatCommands\CmdHelp.cs" />
     <Compile Include="ChatCommands\CmdPure.cs" />
