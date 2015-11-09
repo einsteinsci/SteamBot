@@ -23,6 +23,7 @@ using SteamTrade.TradeOffer;
 using SteamBot.SteamGroups;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using SteamBot.TF2GC;
 
 namespace SteamBot
 {
@@ -50,7 +51,8 @@ namespace SteamBot
 		private readonly UserHandlerCreator createHandler;
 		private readonly bool isProccess;
 		private readonly BackgroundWorker botSteamThread;
-		private readonly Thread heartBeatThread; // <-- HERE
+		private readonly Thread heartBeatThread;
+		private readonly Thread crafterThread;
 		#endregion
 
 		#region Private variables
@@ -240,29 +242,15 @@ namespace SteamBot
 			botSteamThread.RunWorkerCompleted += BackgroundWorkerOnRunWorkerCompleted;
 			botSteamThread.RunWorkerAsync();
 
-			heartBeatThread = new Thread(() =>
-			{
-				DateTime lastHeartBeat = DateTime.Now.Subtract(TimeSpan.FromMinutes(4.5));
-
-				while (IsRunning)
-				{
-					if (DateTime.Now.Subtract(lastHeartBeat).TotalMinutes > 5.0)
-					{
-						bool success = SendBpTfHeartBeat();
-						if (success)
-							Log.Info("bp.tf Heartbeat sent.");
-						else
-							Log.Error("bp.tf Heartbeat failed.");
-
-						lastHeartBeat = DateTime.Now;
-					}
-
-					Thread.Sleep(1000);
-				}
-			});
+			heartBeatThread = new Thread(HeartbeatLoop);
 			heartBeatThread.Name = "bp.tf Heartbeat Thread: " + config.Username;
 			heartBeatThread.IsBackground = true;
 			heartBeatThread.Start();
+
+			crafterThread = new Thread(CrafterLoop);
+			crafterThread.Name = "Crafting Loop Thread: " + config.Username;
+			crafterThread.IsBackground = true;
+			crafterThread.Start();
 		}
 
 		~Bot()
@@ -697,33 +685,6 @@ namespace SteamBot
 		}
 		#endregion security
 
-		public bool SendBpTfHeartBeat()
-		{
-			const string BPTF_HEARTBEAT_URL = "http://backpack.tf/api/IAutomatic/IHeartBeat";
-
-			using (WebClient client = new WebClient())
-			{
-				NameValueCollection data = new NameValueCollection();
-				data.Add("method", "alive");
-				data.Add("version", logOnDetails.Username + "-v0.1.0");
-				data.Add("steamid", SteamUser.SteamID.ConvertToUInt64().ToString());
-				data.Add("token", BPTF_TOKEN_SEALEDBOT);
-
-				byte[] response = client.UploadValues(BPTF_HEARTBEAT_URL, data);
-
-				string result = Encoding.UTF8.GetString(response);
-				dynamic json = JValue.Parse(result);
-				int success = json.success;
-
-				if (success == 0)
-				{
-					Log.Error("backpack.tf heartbeat failed: " + json.message);
-				}
-
-				return success != 0;
-			}
-		}
-
 		void OnUpdateMachineAuthCallback(SteamUser.UpdateMachineAuthCallback machineAuth)
 		{
 			byte[] hash = _sec_SHAHash (machineAuth.Data);
@@ -754,6 +715,29 @@ namespace SteamBot
 			Log.Debug("Sent Machine AUTH response.");
 		}
 
+		private void FireOnSteamGuardRequired(SteamGuardRequiredEventArgs e)
+		{
+			// Set to null in case this is another attempt
+			this.AuthCode = null;
+
+			EventHandler<SteamGuardRequiredEventArgs> handler = OnSteamGuardRequired;
+			if (handler != null)
+				handler(this, e);
+			else
+			{
+				while (true)
+				{
+					if (this.AuthCode != null)
+					{
+						e.SteamGuard = this.AuthCode;
+						break;
+					}
+
+					Thread.Sleep(5);
+				}
+			}
+		}
+
 		/// <summary>
 		/// Gets the bot's inventory and stores it in MyInventory.
 		/// </summary>
@@ -774,6 +758,7 @@ namespace SteamBot
 			_myInventoryTask = Task.Factory.StartNew(FetchBotsInventory);
 		}
 
+		#region subscription methods
 		public void TradeOfferRouter(TradeOffer offer)
 		{
 			if (offer.OfferState == TradeOfferState.TradeOfferStateActive)
@@ -829,6 +814,7 @@ namespace SteamBot
 			trade.OnUserSetReady -= handler.OnTradeReadyHandler;
 			trade.OnUserAccept -= handler.OnTradeAcceptHandler;
 		}
+		#endregion subscription methods
 
 		/// <summary>
 		/// Fetch the Bot's inventory and log a warning if it's private
@@ -889,30 +875,129 @@ namespace SteamBot
 			}
 		}
 
-		#endregion Background Worker Methods
-
-		private void FireOnSteamGuardRequired(SteamGuardRequiredEventArgs e)
+		public void HeartbeatLoop()
 		{
-			// Set to null in case this is another attempt
-			this.AuthCode = null;
+			DateTime lastHeartbeat = DateTime.Now.Subtract(TimeSpan.FromMinutes(4.5));
 
-			EventHandler<SteamGuardRequiredEventArgs> handler = OnSteamGuardRequired;
-			if (handler != null)
-				handler(this, e);
-			else
+			while (IsRunning)
 			{
-				while (true)
+				if (DateTime.Now.Subtract(lastHeartbeat).TotalMinutes > 5.0)
 				{
-					if (this.AuthCode != null)
+					bool success = SendBpTfHeartbeat();
+					if (success)
+						Log.Info("bp.tf Heartbeat sent.");
+					else
+						Log.Error("bp.tf Heartbeat failed.");
+
+					lastHeartbeat = DateTime.Now;
+				}
+
+				Thread.Sleep(1000);
+			}
+		}
+
+		public bool SendBpTfHeartbeat()
+		{
+			const string BPTF_HEARTBEAT_URL = "http://backpack.tf/api/IAutomatic/IHeartBeat";
+
+			using (WebClient client = new WebClient())
+			{
+				NameValueCollection data = new NameValueCollection();
+				data.Add("method", "alive");
+				data.Add("version", logOnDetails.Username + "-v0.1.0");
+				data.Add("steamid", SteamUser.SteamID.ConvertToUInt64().ToString());
+				data.Add("token", BPTF_TOKEN_SEALEDBOT);
+
+				byte[] response = client.UploadValues(BPTF_HEARTBEAT_URL, data);
+
+				string result = Encoding.UTF8.GetString(response);
+				dynamic json = JValue.Parse(result);
+				int success = json.success;
+
+				if (success == 0)
+				{
+					Log.Error("backpack.tf heartbeat failed: " + json.message);
+				}
+
+				return success != 0;
+			}
+		}
+
+		public void CrafterLoop()
+		{
+			DateTime lastCrafterLoop = DateTime.Now.Subtract(TimeSpan.FromMinutes(4.9));
+
+			while (IsRunning)
+			{
+				if (DateTime.Now.Subtract(lastCrafterLoop).TotalMinutes > 5.0)
+				{
+					GetInventory();
+
+					SetGamePlaying(440);
+
+					int totalScrap = 0, totalRec = 0;
+					foreach (Inventory.Item item in MyInventory.Items)
 					{
-						e.SteamGuard = this.AuthCode;
-						break;
+						if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
+							totalScrap++;
+						else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
+							totalRec++;
 					}
 
-					Thread.Sleep(5);
+					if (totalScrap > 4)
+					{
+						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.SCRAP_DEFINDEX, 3);
+						Crafting.CraftItems(this, ECraftingRecipe.CombineScrap, assets.ToArray());
+						Log.Info("Crafted scrap into reclaimed.");
+					}
+
+					if (totalScrap < 2)
+					{
+						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 1);
+						Crafting.CraftItems(this, ECraftingRecipe.SmeltReclaimed, assets.ToArray());
+						Log.Info("Smelted reclaimed into scrap.");
+					}
+
+					if (totalRec > 4)
+					{
+						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 3);
+						Crafting.CraftItems(this, ECraftingRecipe.CombineReclaimed, assets.ToArray());
+						Log.Info("Crafted reclaimed into refined.");
+					}
+
+					if (totalRec < 2)
+					{
+						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.REFINED_DEFINDEX, 1);
+						Crafting.CraftItems(this, ECraftingRecipe.SmeltRefined, assets.ToArray());
+						Log.Info("Smelted refined into reclaimed.");
+					}
+
+					SetGamePlaying(0);
+					GetInventory();
 				}
 			}
 		}
+
+		private List<ulong> _getAssetIDsInBackpack(ushort defindex, int maxCount = 0)
+		{
+			List<ulong> res = new List<ulong>();
+			foreach (Inventory.Item i in MyInventory.Items)
+			{
+				if (i.Defindex == defindex)
+				{
+					res.Add(i.Id);
+				}
+
+				if (res.Count == maxCount && maxCount > 0)
+				{
+					break;
+				}
+			}
+
+			return res;
+		}
+
+		#endregion Background Worker Methods
 
 		#region Group Methods
 
