@@ -17,12 +17,13 @@ using Microsoft.Win32;
 using SteamKit2;
 using SteamKit2.Internal;
 
-using SteamTrade;
-
-using SteamTrade.TradeOffer;
-using SteamBot.SteamGroups;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+
+using SteamTrade;
+using SteamTrade.TradeOffer;
+
+using SteamBot.SteamGroups;
 using SteamBot.TF2GC;
 
 namespace SteamBot
