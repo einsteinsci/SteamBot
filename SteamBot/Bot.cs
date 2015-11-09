@@ -924,46 +924,59 @@ namespace SteamBot
 					GetInventory();
 					SetGamePlaying(440);
 
-					int totalScrap = 0, totalRec = 0;
-					foreach (Inventory.Item item in MyInventory.Items)
+					bool didSomething = false;
+					do
 					{
-						if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
-							totalScrap++;
-						else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
-							totalRec++;
-					}
+						int totalScrap = 0, totalRec = 0;
+						foreach (Inventory.Item item in MyInventory.Items)
+						{
+							if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
+								totalScrap++;
+							else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
+								totalRec++;
+						}
 
-					if (totalScrap > 4)
-					{
-						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.SCRAP_DEFINDEX, 3);
-						Crafting.CraftItems(this, ECraftingRecipe.CombineScrap, assets.ToArray());
-						Log.Info("Crafted scrap into reclaimed.");
-					}
+						if (totalScrap > 4)
+						{
+							List<ulong> assets = _getAssetIDsInBackpack(TF2Value.SCRAP_DEFINDEX, 3);
+							Crafting.CraftItems(this, ECraftingRecipe.CombineScrap, assets.ToArray());
+							Log.Info("Crafted scrap into reclaimed.");
+							didSomething = true;
+						}
 
-					if (totalScrap < 2)
-					{
-						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 1);
-						Crafting.CraftItems(this, ECraftingRecipe.SmeltReclaimed, assets.ToArray());
-						Log.Info("Smelted reclaimed into scrap.");
-					}
+						if (totalScrap < 2)
+						{
+							List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 1);
+							Crafting.CraftItems(this, ECraftingRecipe.SmeltReclaimed, assets.ToArray());
+							Log.Info("Smelted reclaimed into scrap.");
+							didSomething = true;
+						}
 
-					if (totalRec > 4)
-					{
-						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 3);
-						Crafting.CraftItems(this, ECraftingRecipe.CombineReclaimed, assets.ToArray());
-						Log.Info("Crafted reclaimed into refined.");
-					}
+						if (totalRec > 4)
+						{
+							List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 3);
+							Crafting.CraftItems(this, ECraftingRecipe.CombineReclaimed, assets.ToArray());
+							Log.Info("Crafted reclaimed into refined.");
+							didSomething = true;
+						}
 
-					if (totalRec < 2)
-					{
-						List<ulong> assets = _getAssetIDsInBackpack(TF2Value.REFINED_DEFINDEX, 1);
-						Crafting.CraftItems(this, ECraftingRecipe.SmeltRefined, assets.ToArray());
-						Log.Info("Smelted refined into reclaimed.");
-					}
+						if (totalRec < 2)
+						{
+							List<ulong> assets = _getAssetIDsInBackpack(TF2Value.REFINED_DEFINDEX, 1);
+							Crafting.CraftItems(this, ECraftingRecipe.SmeltRefined, assets.ToArray());
+							Log.Info("Smelted refined into reclaimed.");
+							didSomething = true;
+						}
 
-					SetGamePlaying(0);
-					GetInventory();
+						Thread.Sleep(1000);
+						SetGamePlaying(0);
+						GetInventory();
+					} while (didSomething);
+
+					lastCrafterLoop = DateTime.Now;
 				}
+
+				Thread.Sleep(5000);
 			}
 		}
 
