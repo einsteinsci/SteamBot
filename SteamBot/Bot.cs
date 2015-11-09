@@ -32,13 +32,8 @@ namespace SteamBot
 		public const string BPTF_TOKEN_SEALEDINTERFACE = "55f8e711b98d8871558b4601";
 		public const string BPTF_TOKEN_SEALEDBOT = "5622ef31b98d88ea15cc1ac9";
 		internal const string REGISTRY_KEY_PATH = "SOFTWARE\\SealedInterface\\SteamBot";
-
-		public const int PROGRESS_NORMAL = 0;
-		public const int PROGRESS_ENTERPASSWORD = 2;
-
-		#region Bot delegates
+		
 		public delegate UserHandler UserHandlerCreator(Bot bot, SteamID id);
-		#endregion
 
 		#region Private readonly variables
 		[SecurityCritical]
@@ -160,12 +155,6 @@ namespace SteamBot
 				return _myInventoryTask.Result;
 			}
 		}
-
-		/// <summary>
-		/// Compatibility sanity.
-		/// </summary>
-		[Obsolete("Refactored to be Log instead of log")]
-		public Log log { get { return Log; } }
 
 		public Bot(Configuration.BotInfo config, string apiKey, UserHandlerCreator handlerCreator, bool debug = false,
 			bool process = false)
@@ -932,7 +921,6 @@ namespace SteamBot
 				if (DateTime.Now.Subtract(lastCrafterLoop).TotalMinutes > 5.0)
 				{
 					GetInventory();
-
 					SetGamePlaying(440);
 
 					int totalScrap = 0, totalRec = 0;
