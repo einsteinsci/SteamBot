@@ -4,6 +4,7 @@ using SteamTrade;
 using SteamTrade.TradeWebAPI;
 using System.Linq;
 using SteamTrade.TradeOffer;
+using System;
 
 namespace SteamBot
 {
@@ -26,6 +27,9 @@ namespace SteamBot
 		{
 			Log.Info("{0} has added me to their friends list.", OtherSID.ToString());
 			Bot.ResetFriendsList();
+			SendChatMessage("Hi. I am Sealed Steam Bot. Type 'trade' to start trading, or 'help'" +
+				" to get a list of commands. Please note I am currently in beta, so my functions" +
+				" may be glitchy at times.");
 			return true;
 		}
 
@@ -74,6 +78,10 @@ namespace SteamBot
 		public override bool OnTradeRequest()
 		{
 			SendChatMessage("I am accepting your trade request.");
+			Bot.DoDelayedStuff(TimeSpan.FromMinutes(2), () =>
+				SendChatMessage("Feel free to provide feedback for this bot using the feedback command: " +
+				"feedback {message}"));
+
 			return true;
 		}
 
@@ -205,6 +213,8 @@ namespace SteamBot
 
 		public override void OnTradeMessage(string messageRaw)
 		{
+			Log.Info("Recieved trade message from user {0}: {1}", OtherSID.ToString(), messageRaw);
+
 			string message = messageRaw.Trim().ToLower();
 
 			Bot.GetInventory();
@@ -345,7 +355,7 @@ namespace SteamBot
 
 		public override void OnTradeAwaitingEmailConfirmation(long tradeOfferID)
 		{
-			Log.Warn("Trade ended awaiting email confirmation");
+			Log.Success("Trade ended awaiting email confirmation");
 			SendChatMessage("Please complete the email confirmation to finish the trade");
 		}
 
@@ -358,7 +368,10 @@ namespace SteamBot
 				try
 				{
 					if (Trade.AcceptTrade())
+					{
 						Log.Success("Trade Accepted!");
+						SendChatMessage("Thank you for trading with me.");
+					}
 				}
 				catch
 				{

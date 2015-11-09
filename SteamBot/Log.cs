@@ -161,7 +161,7 @@ namespace SteamBot
 			switch (level)
 			{
 				case LogLevel.Info:
-					return ConsoleColor.Gray;
+					return ConsoleColor.White;
 				case LogLevel.Debug:
 					return ConsoleColor.DarkGray;
 				case LogLevel.Success:
@@ -171,7 +171,7 @@ namespace SteamBot
 				case LogLevel.Error:
 					return ConsoleColor.Red;
 				case LogLevel.Interface:
-					return ConsoleColor.White;
+					return ConsoleColor.Cyan;
 				default:
 					return DefaultConsoleColor;
 			}

@@ -9,16 +9,17 @@ namespace SteamTrade
 {
 	public class TradeManager
 	{
-		private const int MaxGapTimeDefault = 15;
-		private const int MaxTradeTimeDefault = 180;
-		private const int TradePollingIntervalDefault = 800;
-		private readonly string ApiKey;
-		private readonly SteamWeb SteamWeb;
-		private DateTime tradeStartTime;
-		private DateTime lastOtherActionTime;
-		private DateTime lastTimeoutMessage;
-		private Task<Inventory> myInventoryTask;
-		private Task<Inventory> otherInventoryTask;
+		private const int _MAX_GAP_TIME_DEF = 15;
+		private const int _MAX_TRADE_TIME_DEF = 180;
+		private const int _TRADE_POLLING_INTERVAL_DEF = 800;
+		private readonly string _apiKey;
+		private readonly SteamWeb _steamWeb;
+		private DateTime _tradeStartTime;
+		private DateTime _lastOtherActionTime;
+		private DateTime _lastTimeoutMessage;
+		private Task<Inventory> _myInventoryTask;
+		private Task<Inventory> _otherInventoryTask;
+		private Action<string> _sendChatMessage;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SteamTrade.TradeManager"/> class.
@@ -29,7 +30,7 @@ namespace SteamTrade
 		/// <param name="steamWeb">
 		/// The SteamWeb instances for this bot
 		/// </param>
-		public TradeManager (string apiKey, SteamWeb steamWeb)
+		public TradeManager(string apiKey, SteamWeb steamWeb, Action<string> sendChat)
 		{
 			if (apiKey == null)
 				throw new ArgumentNullException ("apiKey");
@@ -37,10 +38,11 @@ namespace SteamTrade
 			if (steamWeb == null)
 				throw new ArgumentNullException ("steamWeb");
 
-			SetTradeTimeLimits (MaxTradeTimeDefault, MaxGapTimeDefault, TradePollingIntervalDefault);
+			SetTradeTimeLimits (_MAX_TRADE_TIME_DEF, _MAX_GAP_TIME_DEF, _TRADE_POLLING_INTERVAL_DEF);
 
-			ApiKey = apiKey;
-			SteamWeb = steamWeb;
+			_apiKey = apiKey;
+			_steamWeb = steamWeb;
+			_sendChatMessage = sendChat;
 		}
 
 		#region Public Properties
@@ -79,11 +81,11 @@ namespace SteamTrade
 		{
 			get
 			{
-				if(myInventoryTask == null)
+				if(_myInventoryTask == null)
 					return null;
 
-				myInventoryTask.Wait();
-				return myInventoryTask.Result;
+				_myInventoryTask.Wait();
+				return _myInventoryTask.Result;
 			}
 		}
 
@@ -97,11 +99,11 @@ namespace SteamTrade
 		{
 			get
 			{
-				if(otherInventoryTask == null)
+				if(_otherInventoryTask == null)
 					return null;
 
-				otherInventoryTask.Wait();
-				return otherInventoryTask.Result;
+				_otherInventoryTask.Wait();
+				return _otherInventoryTask.Result;
 			}
 		}
 
@@ -163,10 +165,10 @@ namespace SteamTrade
 		/// </remarks>
 		public Trade CreateTrade (SteamID  me, SteamID other)
 		{
-			if (otherInventoryTask == null || myInventoryTask == null)
+			if (_otherInventoryTask == null || _myInventoryTask == null)
 				InitializeTrade (me, other);
 
-			var t = new Trade (me, other, SteamWeb, myInventoryTask, otherInventoryTask);
+			var t = new Trade (me, other, _steamWeb, _myInventoryTask, _otherInventoryTask);
 
 			t.OnClose += delegate
 			{
@@ -186,8 +188,8 @@ namespace SteamTrade
 		public void StopTrade ()
 		{
 			// TODO: something to check that trade was the Trade returned from CreateTrade
-			otherInventoryTask = null;
-			myInventoryTask = null;
+			_otherInventoryTask = null;
+			_myInventoryTask = null;
 
 			IsTradeThreadRunning = false;
 		}
@@ -208,7 +210,8 @@ namespace SteamTrade
 		public void InitializeTrade (SteamID me, SteamID other)
 		{
 			// fetch other player's inventory from the Steam API.
-			otherInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(other.ConvertToUInt64(), ApiKey, SteamWeb));
+			_otherInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(other.ConvertToUInt64(), 
+				_apiKey, _steamWeb, _sendChatMessage));
 
 			//if (OtherInventory == null)
 			//{
@@ -216,11 +219,12 @@ namespace SteamTrade
 			//}
 			
 			// fetch our inventory from the Steam API.
-			myInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(me.ConvertToUInt64(), ApiKey, SteamWeb));
+			_myInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(me.ConvertToUInt64(), 
+				_apiKey, _steamWeb, _sendChatMessage));
 			
 			// check that the schema was already successfully fetched
 			if (Trade.CurrentSchema == null)
-				Trade.CurrentSchema = Schema.FetchSchema (ApiKey);
+				Trade.CurrentSchema = Schema.FetchSchema (_apiKey);
 
 			if (Trade.CurrentSchema == null)
 				throw new TradeException ("Could not download the latest item schema.");
@@ -234,9 +238,9 @@ namespace SteamTrade
 		public void StartTradeThread (Trade trade)
 		{
 			// initialize data to use in thread
-			tradeStartTime = DateTime.Now;
-			lastOtherActionTime = DateTime.Now;
-			lastTimeoutMessage = DateTime.Now.AddSeconds(-1000);
+			_tradeStartTime = DateTime.Now;
+			_lastOtherActionTime = DateTime.Now;
+			_lastTimeoutMessage = DateTime.Now.AddSeconds(-1000);
 
 			var pollThread = new Thread (() =>
 			{
@@ -252,7 +256,7 @@ namespace SteamTrade
 						bool action = trade.Poll();
 
 						if(action)
-							lastOtherActionTime = DateTime.Now;
+							_lastOtherActionTime = DateTime.Now;
 
 						if (trade.HasTradeEnded || CheckTradeTimeout(trade))
 						{
@@ -312,15 +316,15 @@ namespace SteamTrade
 
 			var now = DateTime.Now;
 
-			DateTime actionTimeout = lastOtherActionTime.AddSeconds(MaxActionGapSec);
+			DateTime actionTimeout = _lastOtherActionTime.AddSeconds(MaxActionGapSec);
 			int untilActionTimeout = (int)Math.Round((actionTimeout - now).TotalSeconds);
 
 			DebugPrint(string.Format ("{0} {1}", actionTimeout, untilActionTimeout));
 
-			DateTime tradeTimeout = tradeStartTime.AddSeconds(MaxTradeTimeSec);
+			DateTime tradeTimeout = _tradeStartTime.AddSeconds(MaxTradeTimeSec);
 			int untilTradeTimeout = (int)Math.Round((tradeTimeout - now).TotalSeconds);
 
-			double secsSinceLastTimeoutMessage = (now - lastTimeoutMessage).TotalSeconds;
+			double secsSinceLastTimeoutMessage = (now - _lastTimeoutMessage).TotalSeconds;
 
 			if (untilActionTimeout <= 0 || untilTradeTimeout <= 0)
 			{
@@ -343,7 +347,7 @@ namespace SteamTrade
 						" seconds if you do not respond.");
 				}
 				catch { }
-				lastTimeoutMessage = now;
+				_lastTimeoutMessage = now;
 			}
 			return false;
 		}

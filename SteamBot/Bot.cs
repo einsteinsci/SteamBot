@@ -143,7 +143,7 @@ namespace SteamBot
 		{
 			get
 			{
-				CreateFriendsListIfNecessary();
+				_createFriendsListIfNecessary();
 				return _friends;
 			}
 		}
@@ -228,8 +228,8 @@ namespace SteamBot
 			EventMgr = new EventManager(this, CallbackMgr);
 
 			botSteamThread = new BackgroundWorker { WorkerSupportsCancellation = true };
-			botSteamThread.DoWork += BackgroundWorkerOnDoWork;
-			botSteamThread.RunWorkerCompleted += BackgroundWorkerOnRunWorkerCompleted;
+			botSteamThread.DoWork += _backgroundWorkerOnDoWork;
+			botSteamThread.RunWorkerCompleted += _backgroundWorkerOnRunWorkerCompleted;
 			botSteamThread.RunWorkerAsync();
 
 			heartBeatThread = new Thread(HeartbeatLoop);
@@ -245,10 +245,10 @@ namespace SteamBot
 
 		~Bot()
 		{
-			Dispose(false);
+			_dispose(false);
 		}
 
-		private void CreateFriendsListIfNecessary()
+		private void _createFriendsListIfNecessary()
 		{
 			if (_friends != null)
 				return;
@@ -320,7 +320,7 @@ namespace SteamBot
 		/// </returns>
 		public bool OpenTrade(SteamID other)
 		{
-			if (CurrentTrade != null || CheckCookies() == false)
+			if (CurrentTrade != null || _checkCookies() == false)
 				return false;
 			SteamTrade.Trade(other);
 			return true;
@@ -333,15 +333,15 @@ namespace SteamBot
 		{
 			if (CurrentTrade == null)
 				return;
-			UnsubscribeTrade (GetUserHandler (CurrentTrade.OtherSID), CurrentTrade);
+			UnsubscribeTrade (_getUserHandler (CurrentTrade.OtherSID), CurrentTrade);
 			_tradeManager.StopTrade ();
 			CurrentTrade = null;
 		}
 
-		void OnTradeTimeout(object sender, EventArgs args) 
+		private void _onTradeTimeout(object sender, EventArgs args) 
 		{
 			// ignore event params and just null out the trade.
-			GetUserHandler(CurrentTrade.OtherSID).OnTradeTimeout();
+			_getUserHandler(CurrentTrade.OtherSID).OnTradeTimeout();
 		}
 
 		/// <summary>
@@ -369,7 +369,7 @@ namespace SteamBot
 		{
 			try
 			{
-				GetUserHandler(SteamClient.SteamID).OnBotCommand(command);
+				_getUserHandler(SteamClient.SteamID).OnBotCommand(command);
 			}
 			catch (ObjectDisposedException e)
 			{
@@ -386,7 +386,7 @@ namespace SteamBot
 			}
 		}
 
-		bool HandleTradeSessionStart(SteamID other)
+		public bool HandleTradeSessionStart(SteamID other)
 		{
 			if (CurrentTrade != null)
 				return false;
@@ -395,7 +395,7 @@ namespace SteamBot
 				_tradeManager.InitializeTrade(SteamUser.SteamID, other);
 				CurrentTrade = _tradeManager.CreateTrade(SteamUser.SteamID, other);
 				CurrentTrade.OnClose += CloseTrade;
-				SubscribeTrade(CurrentTrade, GetUserHandler(other));
+				SubscribeTrade(CurrentTrade, _getUserHandler(other));
 				_tradeManager.StartTradeThread(CurrentTrade);
 				return true;
 			}
@@ -438,7 +438,7 @@ namespace SteamBot
 			CurrentGame = id;
 		}
 
-		void UserLogOn()
+		private void _userLogOn()
 		{
 			// get sentry file which has the machine hw info saved 
 			// from when a steam guard code was entered
@@ -459,7 +459,7 @@ namespace SteamBot
 			SteamUser.LogOn(logOnDetails);
 		}
 
-		void UserWebLogOn()
+		private void _userWebLogOn()
 		{
 			do
 			{
@@ -474,9 +474,9 @@ namespace SteamBot
 
 			Log.Success("User Authenticated!");
 
-			_tradeManager = new TradeManager(ApiKey, SteamWeb);
+			_tradeManager = new TradeManager(ApiKey, SteamWeb, _sendChatToEveryone);
 			_tradeManager.SetTradeTimeLimits(MaximumTradeTime, MaximumActionGap, _tradePollingInterval);
-			_tradeManager.OnTimeout += OnTradeTimeout;
+			_tradeManager.OnTimeout += _onTradeTimeout;
 			_tradeOfferManager = new TradeOfferManager(ApiKey, SteamWeb);
 			SubscribeTradeOffer(_tradeOfferManager);
 			_cookiesAreInvalid = false;
@@ -489,7 +489,7 @@ namespace SteamBot
 		/// Sets cookie flag if they are invalid.
 		/// </summary>
 		/// <returns>true if cookies are valid; otherwise false</returns>
-		bool CheckCookies()
+		private bool _checkCookies()
 		{
 			// We still haven't re-authenticated
 			if (_cookiesAreInvalid)
@@ -515,14 +515,14 @@ namespace SteamBot
 			return true;
 		}
 
-		UserHandler GetUserHandler(SteamID sid)
+		private UserHandler _getUserHandler(SteamID sid)
 		{
 			if (!userHandlers.ContainsKey(sid))
 				userHandlers[sid] = createHandler(this, sid);
 			return userHandlers[sid];
 		}
 
-		void RemoveUserHandler(SteamID sid)
+		private void _removeUserHandler(SteamID sid)
 		{
 			if (userHandlers.ContainsKey(sid))
 				userHandlers.Remove(sid);
@@ -675,7 +675,7 @@ namespace SteamBot
 		}
 		#endregion security
 
-		void OnUpdateMachineAuthCallback(SteamUser.UpdateMachineAuthCallback machineAuth)
+		private void _onUpdateMachineAuthCallback(SteamUser.UpdateMachineAuthCallback machineAuth)
 		{
 			byte[] hash = _sec_SHAHash (machineAuth.Data);
 
@@ -705,7 +705,7 @@ namespace SteamBot
 			Log.Debug("Sent Machine AUTH response.");
 		}
 
-		private void FireOnSteamGuardRequired(SteamGuardRequiredEventArgs e)
+		private void _fireOnSteamGuardRequired(SteamGuardRequiredEventArgs e)
 		{
 			// Set to null in case this is another attempt
 			this.AuthCode = null;
@@ -745,7 +745,7 @@ namespace SteamBot
 		/// </example>
 		public void GetInventory()
 		{
-			_myInventoryTask = Task.Factory.StartNew(FetchBotsInventory);
+			_myInventoryTask = Task.Factory.StartNew(_fetchBotsInventory);
 		}
 
 		#region subscription methods
@@ -753,7 +753,7 @@ namespace SteamBot
 		{
 			if (offer.OfferState == TradeOfferState.TradeOfferStateActive)
 			{
-				GetUserHandler(offer.PartnerSteamId).OnNewTradeOffer(offer);
+				_getUserHandler(offer.PartnerSteamId).OnNewTradeOffer(offer);
 			}
 		}
 		public void SubscribeTradeOffer(TradeOfferManager tradeOfferManager)
@@ -809,9 +809,9 @@ namespace SteamBot
 		/// <summary>
 		/// Fetch the Bot's inventory and log a warning if it's private
 		/// </summary>
-		private Inventory FetchBotsInventory()
+		private Inventory _fetchBotsInventory()
 		{
-			var inventory = Inventory.FetchInventory(SteamUser.SteamID, ApiKey, SteamWeb);
+			var inventory = Inventory.FetchInventory(SteamUser.SteamID, ApiKey, SteamWeb, _sendChatToEveryone);
 			if(inventory.IsPrivate)
 			{
 				Log.Warn("The bot's backpack is private! If your bot adds any items it will fail! Your bot's backpack should be Public.");
@@ -819,9 +819,17 @@ namespace SteamBot
 			return inventory;
 		}
 
+		private void _sendChatToEveryone(string msg)
+		{
+			foreach (UserHandler h in userHandlers.Values)
+			{
+				h.SendChatMessage(msg);
+			}
+		}
+
 		#region Background Worker Methods
 
-		private void BackgroundWorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs runWorkerCompletedEventArgs)
+		private void _backgroundWorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs runWorkerCompletedEventArgs)
 		{
 			if (runWorkerCompletedEventArgs.Error != null)
 			{
@@ -840,7 +848,7 @@ namespace SteamBot
 			}
 		}
 
-		private void BackgroundWorkerOnDoWork(object sender, DoWorkEventArgs doWorkEventArgs)
+		private void _backgroundWorkerOnDoWork(object sender, DoWorkEventArgs doWorkEventArgs)
 		{
 			while (!botSteamThread.CancellationPending)
 			{
@@ -999,6 +1007,18 @@ namespace SteamBot
 			return res;
 		}
 
+		public void DoDelayedStuff(TimeSpan delay, Action thing)
+		{
+			Thread delayedThingThread = new Thread(() =>
+			{
+				Thread.Sleep(delay);
+				thing();
+			});
+			delayedThingThread.Name = "Delayed Action Thread";
+			delayedThingThread.IsBackground = true;
+			delayedThingThread.Start();
+		}
+
 		#endregion Background Worker Methods
 
 		#region Group Methods
@@ -1053,11 +1073,11 @@ namespace SteamBot
 
 		public void Dispose()
 		{
-			Dispose(true);
+			_dispose(true);
 			GC.SuppressFinalize(this);
 		}
 
-		private void Dispose(bool recursive)
+		private void _dispose(bool recursive)
 		{
 			if (_disposed)
 				return;

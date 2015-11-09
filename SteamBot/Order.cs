@@ -71,6 +71,7 @@ namespace SteamBot
 		public bool TradeOfferMatches(UserHandler handler, TradeOffer offer)
 		{
 			handler.GetOtherInventory();
+			handler.Bot.GetInventory();
 
 			if (IsBuyOrder)
 			{

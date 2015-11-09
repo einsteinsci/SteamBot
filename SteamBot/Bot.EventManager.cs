@@ -129,7 +129,7 @@ namespace SteamBot
 
 				if (e.Result == EResult.OK)
 				{
-					Bot.UserLogOn();
+					Bot._userLogOn();
 				}
 				else
 				{
@@ -170,7 +170,7 @@ namespace SteamBot
 
 					// try to get the steamguard auth code from the event callback
 					SteamGuardRequiredEventArgs eva = new SteamGuardRequiredEventArgs();
-					Bot.FireOnSteamGuardRequired(eva);
+					Bot._fireOnSteamGuardRequired(eva);
 					if (!string.IsNullOrEmpty(eva.SteamGuard))
 						Bot.logOnDetails.AuthCode = eva.SteamGuard;
 					else
@@ -189,7 +189,7 @@ namespace SteamBot
 			{
 				Bot._myUniqueId = e.UniqueID.ToString();
 
-				Bot.UserWebLogOn();
+				Bot._userWebLogOn();
 
 				if (Trade.CurrentSchema == null)
 				{
@@ -203,7 +203,7 @@ namespace SteamBot
 
 				Log.Success("Steam Bot Logged In Completely!");
 
-				Bot.GetUserHandler(Bot.SteamClient.SteamID).OnLoginCompleted();
+				Bot._getUserHandler(Bot.SteamClient.SteamID).OnLoginCompleted();
 			}
 
 			[BotEvent]
@@ -214,7 +214,7 @@ namespace SteamBot
 				if (e.Result == EResult.OK)
 				{
 					Bot._myUserNonce = e.Nonce;
-					Bot.UserWebLogOn();
+					Bot._userWebLogOn();
 				}
 				else
 				{
@@ -225,7 +225,7 @@ namespace SteamBot
 			[BotEvent]
 			public void OnUpdateMachineAuth(SteamUser.UpdateMachineAuthCallback e)
 			{
-				Bot.OnUpdateMachineAuthCallback(e);
+				Bot._onUpdateMachineAuthCallback(e);
 			}
 			#endregion login
 
@@ -245,7 +245,7 @@ namespace SteamBot
 					case EAccountType.Clan:
 						if (friend.Relationship == EFriendRelationship.RequestRecipient)
 						{
-							if (Bot.GetUserHandler(friend.SteamID).OnGroupAdd())
+							if (Bot._getUserHandler(friend.SteamID).OnGroupAdd())
 							{
 								Bot.AcceptGroupInvite(friend.SteamID);
 							}
@@ -256,16 +256,16 @@ namespace SteamBot
 						}
 						break;
 					default:
-						Bot.CreateFriendsListIfNecessary();
+						Bot._createFriendsListIfNecessary();
 						if (friend.Relationship == EFriendRelationship.None)
 						{
 							Bot._friends.Remove(friend.SteamID);
-							Bot.GetUserHandler(friend.SteamID).OnFriendRemove();
-							Bot.RemoveUserHandler(friend.SteamID);
+							Bot._getUserHandler(friend.SteamID).OnFriendRemove();
+							Bot._removeUserHandler(friend.SteamID);
 						}
 						else if (friend.Relationship == EFriendRelationship.RequestRecipient)
 						{
-							if (Bot.GetUserHandler(friend.SteamID).OnFriendAdd())
+							if (Bot._getUserHandler(friend.SteamID).OnFriendAdd())
 							{
 								if (!Bot._friends.Contains(friend.SteamID))
 								{
@@ -280,7 +280,7 @@ namespace SteamBot
 							else
 							{
 								Bot.SteamFriends.RemoveFriend(friend.SteamID);
-								Bot.RemoveUserHandler(friend.SteamID);
+								Bot._removeUserHandler(friend.SteamID);
 							}
 						}
 						break;
@@ -297,14 +297,14 @@ namespace SteamBot
 				{
 					Log.Info("Chat Message from {0}: {1}", Bot.SteamFriends.
 						GetFriendPersonaName(e.Sender), e.Message);
-					Bot.GetUserHandler(e.Sender).OnMessageHandler(e.Message, type);
+					Bot._getUserHandler(e.Sender).OnMessageHandler(e.Message, type);
 				}
 			}
 
 			[BotEvent]
 			public void OnGroupChatMessage(SteamFriends.ChatMsgCallback e)
 			{
-				Bot.GetUserHandler(e.ChatterID).OnChatRoomMessage(
+				Bot._getUserHandler(e.ChatterID).OnChatRoomMessage(
 					e.ChatRoomID, e.ChatterID, e.Message);
 			}
 			#endregion friends
@@ -324,7 +324,7 @@ namespace SteamBot
 			[BotEvent]
 			public void OnTradeProposed(SteamTrading.TradeProposedCallback e)
 			{
-				if (Bot.CheckCookies() == false)
+				if (Bot._checkCookies() == false)
 				{
 					Bot.SteamTrade.RespondToTrade(e.TradeID, false);
 					return;
@@ -360,7 +360,7 @@ namespace SteamBot
 					return;
 				}
 
-				if (Bot.CurrentTrade == null && Bot.GetUserHandler(e.OtherClient).OnTradeRequest())
+				if (Bot.CurrentTrade == null && Bot._getUserHandler(e.OtherClient).OnTradeRequest())
 				{
 					Bot.SteamTrade.RespondToTrade(e.TradeID, true);
 				}
@@ -377,13 +377,13 @@ namespace SteamBot
 				{
 					Log.Debug("Trade Status: {0}", e.Response);
 					Log.Info("Trade Accepted!");
-					Bot.GetUserHandler(e.OtherClient).OnTradeRequestReply(true, e.Response.ToString());
+					Bot._getUserHandler(e.OtherClient).OnTradeRequestReply(true, e.Response.ToString());
 				}
 				else
 				{
 					Log.Warn("Trade failed: {0}", e.Response);
 					Bot.CloseTrade();
-					Bot.GetUserHandler(e.OtherClient).OnTradeRequestReply(false, e.Response.ToString());
+					Bot._getUserHandler(e.OtherClient).OnTradeRequestReply(false, e.Response.ToString());
 				}
 			}
 			#endregion trading
@@ -424,7 +424,7 @@ namespace SteamBot
 				}
 
 				// Get offers only if cookies are valid
-				if (Bot.CheckCookies())
+				if (Bot._checkCookies())
 				{
 					Bot._tradeOfferManager.GetOffers();
 				}

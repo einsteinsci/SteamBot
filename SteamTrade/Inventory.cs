@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Threading;
 using Newtonsoft.Json;
 using SteamKit2;
 
@@ -15,17 +17,43 @@ namespace SteamTrade
 		/// <param name='steamId'>Steam identifier.</param>
 		/// <param name='apiKey'>The needed Steam API key.</param>
 		/// <param name="steamWeb">The SteamWeb instance for this Bot</param>
-		public static Inventory FetchInventory(ulong steamId, string apiKey, SteamWeb steamWeb)
+		public static Inventory FetchInventory(ulong steamId, string apiKey, SteamWeb steamWeb, Action<string> chatMessage)
 		{
 			int attempts = 1;
 			InventoryResponse result = null;
-			while ((result == null || result.result.items == null) && attempts <= 3)
+			while (result == null || result.result?.items == null)
 			{
-				var url = "http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=" + apiKey + "&steamid=" + steamId;
-				string response = steamWeb.Fetch(url, "GET", null, false);
-				result = JsonConvert.DeserializeObject<InventoryResponse>(response);
+				try
+				{
+					var url = "http://api.steampowered.com/IEconItems_440/GetPlayerItems/v0001/?key=" + apiKey + "&steamid=" + steamId;
+					string response = steamWeb.Fetch(url, "GET", null, false);
+					result = JsonConvert.DeserializeObject<InventoryResponse>(response);
+				}
+				catch (WebException e)
+				{
+					Console.ForegroundColor = ConsoleColor.Red;
+					Console.WriteLine("ERROR IN INVENTORY.FETCHINVENTORY: " + e.ToString());
+					Console.ForegroundColor = ConsoleColor.White;
+					result = null;
+
+					Thread.Sleep(500);
+				}
+
 				attempts++;
+
+				if (attempts == 4)
+				{
+					attempts = 0;
+
+					if (chatMessage != null)
+					{
+						chatMessage("I am currently encountering issues connecting to Steam. Please try again in a few minutes.");
+					}
+
+					Thread.Sleep(TimeSpan.FromMinutes(3));
+				}
 			}
+			
 			return new Inventory(result.result);
 		}
 

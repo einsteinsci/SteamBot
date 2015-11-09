@@ -69,7 +69,8 @@ namespace SteamBot
 		/// </example>
 		public void GetOtherInventory()
 		{
-			otherInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(OtherSID, Bot.ApiKey, SteamWeb));
+			otherInventoryTask = Task.Factory.StartNew(() => Inventory.FetchInventory(OtherSID, 
+				Bot.ApiKey, SteamWeb, (s) => SendChatMessage(s)));
 		}
 
 		public Inventory OtherInventory
@@ -109,10 +110,7 @@ namespace SteamBot
 		/// <value>
 		/// <c>true</c> if the other user is a configured admin; otherwise, <c>false</c>.
 		/// </value>
-		public bool IsAdmin
-		{
-			get { return Bot.Admins.Contains(OtherSID); }
-		}
+		public bool IsAdmin => Bot.Admins.Contains(OtherSID);
 
 		/// <summary>
 		/// Called when the bot is invited to a Steam group
@@ -161,7 +159,7 @@ namespace SteamBot
 		/// <returns>
 		/// Whether to accept the request.
 		/// </returns>
-		public abstract bool OnTradeRequest ();
+		public abstract bool OnTradeRequest();
 
 
 		/// <summary>
@@ -169,9 +167,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="offer"></param>
 		public virtual void OnNewTradeOffer(TradeOffer offer)
-		{
-
-		}
+		{ }
 
 		/// <summary>
 		/// Called when a chat message is sent in a chatroom
@@ -180,18 +176,14 @@ namespace SteamBot
 		/// <param name="sender">The SteamID of the sender</param>
 		/// <param name="message">The message sent</param>
 		public virtual void OnChatRoomMessage(SteamID chatID, SteamID sender, string message)
-		{
-
-		}
+		{ }
 
 		/// <summary>
 		/// Called when an 'exec' command is given via botmanager.
 		/// </summary>
 		/// <param name="command">The command message.</param>
 		public virtual void OnBotCommand(string command)
-		{
-
-		}
+		{ }
 
 		/// <summary>
 		/// Called when user accepts or denies bot's trade request.
@@ -199,9 +191,7 @@ namespace SteamBot
 		/// <param name="accepted">True if user accepted bot's request, false if not.</param>
 		/// <param name="response">String response of the callback.</param>
 		public virtual void OnTradeRequestReply(bool accepted, string response)
-		{
-
-		}
+		{ }
 
 		/// <summary>
 		/// Waits for the user to enter something into regular or trade chat, then returns it (as the result of a task)
@@ -236,18 +226,18 @@ namespace SteamBot
 			OnTradeError(errorMessage);
 		}
 
-		public abstract void OnTradeTimeout ();
+		public abstract void OnTradeTimeout();
 
-		public abstract void OnTradeSuccess ();
+		public abstract void OnTradeSuccess();
 
 		public abstract void OnTradeAwaitingEmailConfirmation (long tradeOfferID);
 
-		public virtual void OnTradeClose ()
+		public virtual void OnTradeClose()
 		{
 			Bot.CloseTrade ();
 		}
 
-		public abstract void OnTradeInit ();
+		public abstract void OnTradeInit();
 
 		public abstract void OnTradeAddItem (Schema.Item schemaItem, Inventory.Item inventoryItem);
 
@@ -328,7 +318,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="message">The message to send to the other user</param>
 		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
-		protected virtual void SendChatMessage(string message, params object[] formatParams)
+		public virtual void SendChatMessage(string message, params object[] formatParams)
 		{
 			SendMessage(SendChatMessageImpl, message, null, formatParams);
 		}
@@ -340,14 +330,15 @@ namespace SteamBot
 		/// <param name="delayMs">The delay, in milliseconds, to wait before sending the message</param>
 		/// <param name="message">The message to send to the other user</param>
 		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
-		protected virtual void SendChatMessage(int delayMs, string message, params object[] formatParams)
+		public virtual void SendChatMessage(int delayMs, string message, params object[] formatParams)
 		{
 			SendMessageDelayed(delayMs, SendChatMessageImpl, message, formatParams);
 		}
 
-		private void SendChatMessageImpl(string message)
+		public void SendChatMessageImpl(string message)
 		{
 			Bot.SteamFriends.SendChatMessage(OtherSID, EChatEntryType.ChatMsg, message);
+			Log.Info("Sent chat message to user {0}: {1}", OtherSID.ToString(), message);
 		}
 
 		/// <summary>
@@ -356,7 +347,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="message">The message to send to the other user</param>
 		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
-		protected virtual void SendTradeMessage(string message, params object[] formatParams)
+		public virtual void SendTradeMessage(string message, params object[] formatParams)
 		{
 			SendMessage(SendTradeMessageImpl, message, null, formatParams);
 		}
@@ -368,7 +359,7 @@ namespace SteamBot
 		/// <param name="delayMs">The delay, in milliseconds, to wait before sending the message</param>
 		/// <param name="message">The message to send to the other user</param>
 		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
-		protected virtual void SendTradeMessage(int delayMs, string message, params object[] formatParams)
+		public virtual void SendTradeMessage(int delayMs, string message, params object[] formatParams)
 		{
 			SendMessageDelayed(delayMs, SendTradeMessageImpl, message, formatParams);
 		}
@@ -378,6 +369,7 @@ namespace SteamBot
 			if (Trade != null && !Trade.HasTradeEnded)
 			{
 				Trade.SendMessage(message);
+				Log.Info("Sent trade message to user {0}: {1}", OtherSID.ToString(), message);
 			}
 		}
 
@@ -387,7 +379,7 @@ namespace SteamBot
 		/// </summary>
 		/// <param name="message">The message to send to the other user</param>
 		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
-		protected virtual void SendReplyMessage(string message, params object[] formatParams)
+		public virtual void SendReplyMessage(string message, params object[] formatParams)
 		{
 			if (_lastMessageWasFromTrade && Trade != null && !Trade.HasTradeEnded)
 			{
@@ -406,7 +398,7 @@ namespace SteamBot
 		/// <param name="delayMs">The delay, in milliseconds, to wait before sending the message</param>
 		/// <param name="message">The message to send to the other user</param>
 		/// <param name="formatParams">Optional.  The format parameters, using the same syntax as string.Format()</param>
-		protected virtual void SendReplyMessage(int delayMs, string message, params object[] formatParams)
+		public virtual void SendReplyMessage(int delayMs, string message, params object[] formatParams)
 		{
 			if (_lastMessageWasFromTrade && Trade != null && !Trade.HasTradeEnded)
 			{
