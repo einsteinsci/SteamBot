@@ -811,12 +811,20 @@ namespace SteamBot
 		/// </summary>
 		private Inventory _fetchBotsInventory()
 		{
-			var inventory = Inventory.FetchInventory(SteamUser.SteamID, ApiKey, SteamWeb, _sendChatToEveryone);
-			if(inventory.IsPrivate)
+			try
 			{
-				Log.Warn("The bot's backpack is private! If your bot adds any items it will fail! Your bot's backpack should be Public.");
+				var inventory = Inventory.FetchInventory(SteamUser.SteamID, ApiKey, SteamWeb, _sendChatToEveryone);
+				if (inventory.IsPrivate)
+				{
+					Log.Warn("The bot's backpack is private! If your bot adds any items it will fail! Your bot's backpack should be Public.");
+				}
+				return inventory;
 			}
-			return inventory;
+			catch (Exception e)
+			{
+				Log.Error("FAILED TO FETCH BOT INVENTORY! Exception: " + e.ToString());
+				return null;
+			}
 		}
 
 		private void _sendChatToEveryone(string msg)
