@@ -413,7 +413,14 @@ namespace SteamBot
 
 		public bool IsFullStock(Order o)
 		{
-			
+			if (o.IsBuyOrder)
+			{
+				Bot.GetInventory();
+
+				return Bot.MyInventory.GetItemsByDefindex(o.Defindex, o.Quality).Count >= o.MaxStock;
+			}
+
+			return false;
 		}
 
 		public void AddMyPayment()
