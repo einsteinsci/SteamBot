@@ -42,10 +42,21 @@ namespace SteamBot
 			SellOrders = new List<Order>();
 		}
 
-		public bool HasMatchingTrade(UserHandler handler, TradeOffer trade)
+		public bool HasMatchingOrder(UserHandler handler, TradeOffer trade)
 		{
 			return BuyOrders.Exists((o) => o.TradeOfferMatches(handler, trade)) || 
 				SellOrders.Exists((o) => o.TradeOfferMatches(handler, trade));
+		}
+
+		public Order GetMatchingOrder(UserHandler handler, TradeOffer trade)
+		{
+			Order buy = BuyOrders.FirstOrDefault((o) => o.TradeOfferMatches(handler, trade));
+			if (buy != null)
+			{
+				return buy;
+			}
+
+			return SellOrders.FirstOrDefault((o) => o.TradeOfferMatches(handler, trade));
 		}
 
 		public static OrderManager Load(Log logger)

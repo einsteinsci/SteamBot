@@ -234,12 +234,10 @@ namespace SteamBot
 
 			heartBeatThread = new Thread(HeartbeatLoop);
 			heartBeatThread.Name = "bp.tf Heartbeat Thread: " + config.Username;
-			heartBeatThread.IsBackground = true;
 			heartBeatThread.Start();
 
 			crafterThread = new Thread(CrafterLoop);
 			crafterThread.Name = "Crafting Loop Thread: " + config.Username;
-			crafterThread.IsBackground = true;
 			crafterThread.Start();
 		}
 
@@ -304,6 +302,8 @@ namespace SteamBot
 
 			SteamClient.Disconnect();
 			botSteamThread.CancelAsync();
+			heartBeatThread.Abort();
+			crafterThread.Abort();
 
 			while (botSteamThread.IsBusy)
 				Thread.Yield();
@@ -478,6 +478,8 @@ namespace SteamBot
 			_tradeManager.SetTradeTimeLimits(MaximumTradeTime, MaximumActionGap, _tradePollingInterval);
 			_tradeManager.OnTimeout += _onTradeTimeout;
 			_tradeOfferManager = new TradeOfferManager(ApiKey, SteamWeb);
+			_tradeOfferManager.LogDebug = (s) => Log.Debug(s);
+			_tradeOfferManager.LogError = (s) => Log.Error(s);
 			SubscribeTradeOffer(_tradeOfferManager);
 			_cookiesAreInvalid = false;
 			// Success, check trade offers which we have received while we were offline

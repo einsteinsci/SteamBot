@@ -91,6 +91,7 @@ namespace SteamBot
 					object subRes = genericSubscribe.Invoke(callbackManager, new object[] { del });
 
 					_subscriptions.Add(subRes as IDisposable);
+					Log.Debug("Subscribed callback event {0}.", m.Name);
 				}
 
 				Log.Success("{0} events subscribed.", _subscriptions.Count);
@@ -215,6 +216,7 @@ namespace SteamBot
 				{
 					Bot._myUserNonce = e.Nonce;
 					Bot._userWebLogOn();
+					Log.Success("Web logon complete.");
 				}
 				else
 				{
@@ -226,6 +228,7 @@ namespace SteamBot
 			public void OnUpdateMachineAuth(SteamUser.UpdateMachineAuthCallback e)
 			{
 				Bot._onUpdateMachineAuthCallback(e);
+				Log.Debug("Machine Authentication Updated.");
 			}
 			#endregion login
 
@@ -238,6 +241,8 @@ namespace SteamBot
 					if (Bot.Admins.Contains(friend.SteamID))
 					{
 						Bot.SteamFriends.SendChatMessage(friend.SteamID, EChatEntryType.ChatMsg, "Hello, sir.");
+						Log.Info("Sent admin startup message to admin '{0}'.", Bot.SteamFriends
+							.GetFriendPersonaName(friend.SteamID));
 					}
 
 					switch (friend.SteamID.AccountType)
@@ -248,10 +253,12 @@ namespace SteamBot
 							if (Bot._getUserHandler(friend.SteamID).OnGroupAdd())
 							{
 								Bot.AcceptGroupInvite(friend.SteamID);
+								Log.Success("Accepted group invite from {0}.", friend.SteamID);
 							}
 							else
 							{
 								Bot.DeclineGroupInvite(friend.SteamID);
+								Log.Info("Declined group invite from {0}.", friend.SteamID);
 							}
 						}
 						break;
@@ -259,6 +266,7 @@ namespace SteamBot
 						Bot._createFriendsListIfNecessary();
 						if (friend.Relationship == EFriendRelationship.None)
 						{
+							Log.Warn("Friend already removed. Removing friend {0}.", friend.SteamID);
 							Bot._friends.Remove(friend.SteamID);
 							Bot._getUserHandler(friend.SteamID).OnFriendRemove();
 							Bot._removeUserHandler(friend.SteamID);
@@ -279,6 +287,7 @@ namespace SteamBot
 							}
 							else
 							{
+								Log.Warn("Friend add failed. Removing friend {0}.", friend.SteamID);
 								Bot.SteamFriends.RemoveFriend(friend.SteamID);
 								Bot._removeUserHandler(friend.SteamID);
 							}
@@ -306,6 +315,8 @@ namespace SteamBot
 			{
 				Bot._getUserHandler(e.ChatterID).OnChatRoomMessage(
 					e.ChatRoomID, e.ChatterID, e.Message);
+				Log.Info("Group chat message from {0}: {1}", Bot.SteamFriends
+					.GetFriendPersonaName(e.ChatterID), e.Message);
 			}
 			#endregion friends
 
@@ -324,28 +335,32 @@ namespace SteamBot
 			[BotEvent]
 			public void OnTradeProposed(SteamTrading.TradeProposedCallback e)
 			{
-				if (Bot._checkCookies() == false)
+				if (!Bot._checkCookies())
 				{
 					Bot.SteamTrade.RespondToTrade(e.TradeID, false);
+					Log.Warn("Trade proposal cookie check failed.");
 					return;
 				}
 
 				try
 				{
 					Bot._tradeManager.InitializeTrade(Bot.SteamUser.SteamID, e.OtherClient);
+					Log.Debug("Trade proposal initialized");
 				}
 				catch (WebException we)
 				{
-					Bot.SteamFriends.SendChatMessage(e.OtherClient,
-							 EChatEntryType.ChatMsg, "Trade error: " + we.Message);
+					Bot.SteamFriends.SendChatMessage(e.OtherClient, EChatEntryType.ChatMsg, 
+						"Trade error: " + we.Message);
+					Log.Error("WebException occurred during trade: " + we.ToString());
 
 					Bot.SteamTrade.RespondToTrade(e.TradeID, false);
 					return;
 				}
-				catch (Exception)
+				catch (Exception ex)
 				{
 					Bot.SteamFriends.SendChatMessage(e.OtherClient, EChatEntryType.ChatMsg,
 						"Trade declined. Could not correctly fetch your backpack.");
+					Log.Error("Exception occurred during trade: " + ex.ToString());
 
 					Bot.SteamTrade.RespondToTrade(e.TradeID, false);
 					return;
@@ -355,6 +370,7 @@ namespace SteamBot
 				{
 					Bot.SteamFriends.SendChatMessage(e.OtherClient, EChatEntryType.ChatMsg,
 						"Trade declined. Your backpack cannot be private.");
+					Log.Warn("Trade declined as other backpack was private.");
 
 					Bot.SteamTrade.RespondToTrade(e.TradeID, false);
 					return;
@@ -376,7 +392,7 @@ namespace SteamBot
 				if (e.Response == EEconTradeResponse.Accepted)
 				{
 					Log.Debug("Trade Status: {0}", e.Response);
-					Log.Info("Trade Accepted!");
+					Log.Success("Trade Accepted!");
 					Bot._getUserHandler(e.OtherClient).OnTradeRequestReply(true, e.Response.ToString());
 				}
 				else
@@ -426,7 +442,12 @@ namespace SteamBot
 				// Get offers only if cookies are valid
 				if (Bot._checkCookies())
 				{
+					Log.Debug("Checking trade offers");
 					Bot._tradeOfferManager.GetOffers();
+				}
+				else
+				{
+					Log.Error("Unable to fetch cookies!");
 				}
 			}
 

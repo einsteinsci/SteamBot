@@ -390,7 +390,9 @@ namespace SteamBot
 			}
 			else
 			{
-				if (Bot.Orders.HasMatchingTrade(this, offer))
+				bool hasMatchingOrder = Bot.Orders.HasMatchingOrder(this, offer);
+				Order ord = Bot.Orders.GetMatchingOrder(this, offer);
+				if (hasMatchingOrder && !IsFullStock(ord))
 				{
 					offer.Accept();
 					Log.Success("Accepted valid trade offer from user #{0}.", OtherSID.ToString());
@@ -407,6 +409,11 @@ namespace SteamBot
 				//Log.Warn("Declined trade offer from user {0}.", OtherSID.ToString());
 				//SendChatMessage("I don't know you. I cannot accept your trade offer.");
 			}
+		}
+
+		public bool IsFullStock(Order o)
+		{
+			
 		}
 
 		public void AddMyPayment()

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 namespace SteamTrade.TradeOffer
 {
@@ -61,18 +62,43 @@ namespace SteamTrade.TradeOffer
 			string options = string.Format("?key={0}&get_sent_offers={1}&get_received_offers={2}&get_descriptions={3}&language={4}&active_only={5}",
 				apiKey, BoolConverter(getSentOffers), BoolConverter(getReceivedOffers), BoolConverter(getDescriptions), language, BoolConverter(true));
 			string url = string.Format(BaseUrl, "GetTradeOffers", "v1", options);
-			string response = steamWeb.Fetch(url, "GET", null, false);
-			try
+
+			bool failed = true;
+			OffersResponse response = null;
+			while (failed)
 			{
-				var result = JsonConvert.DeserializeObject<ApiResponse<OffersResponse>>(response);
-				return result.Response;
+				string responseStr = steamWeb.Fetch(url, "GET", null, false);
+				try
+				{
+					var result = JsonConvert.DeserializeObject<ApiResponse<OffersResponse>>(responseStr);
+					response = result.Response;
+				}
+				catch (Exception ex)
+				{
+					//todo log
+					Debugger.Log(3, "[TradeOfferWebAPI] ", ex.ToString());
+					Console.ForegroundColor = ConsoleColor.Red;
+					Console.WriteLine("[TradeOfferWebAPI] Exception caught in deserialization: " + ex.ToString());
+				}
+
+				if (response != null && response.TradeOffersReceived != null)
+				{
+					Console.ForegroundColor = ConsoleColor.DarkGray;
+					Console.WriteLine("[TradeOfferWebAPI] Trade offers fetched.");
+					failed = false;
+				}
+
+				Console.ForegroundColor = ConsoleColor.White;
+
+				if (failed)
+				{
+					Console.ForegroundColor = ConsoleColor.DarkYellow;
+					Console.WriteLine("[TradeOfferWebAPI] Unable to fetch trade offers. Trying again in 45 secs.");
+					Thread.Sleep(45000);
+				}
 			}
-			catch (Exception ex)
-			{
-				//todo log
-				Debug.WriteLine(ex);
-			}
-			return new OffersResponse();
+
+			return response;
 		}
 
 		public OffersResponse GetTradeOffers(bool getSentOffers, bool getReceivedOffers, bool getDescriptions, bool activeOnly, bool historicalOnly, string timeHistoricalCutoff = "1389106496", string language = "en_us")

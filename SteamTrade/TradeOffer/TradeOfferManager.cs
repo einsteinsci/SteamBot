@@ -11,7 +11,14 @@ namespace SteamTrade.TradeOffer
 		private readonly OfferSession session;
 		private readonly TradeOfferWebAPI webApi;
 
-		public int LastTimeCheckedOffers { get; private set; }
+		public Action<string> LogDebug
+		{ get; set; }
+
+		public Action<string> LogError
+		{ get; set; }
+
+		public int LastTimeCheckedOffers
+		{ get; private set; }
 
 		public TradeOfferManager(string apiKey, SteamWeb steamWeb)
 		{
@@ -35,6 +42,7 @@ namespace SteamTrade.TradeOffer
 		/// <returns></returns>
 		public bool GetActiveTradeOffers()
 		{
+			LogDebug("Getting active trade offers");
 			var offers = webApi.GetActiveTradeOffers(false, true, false);
 			if (offers != null && offers.TradeOffersReceived != null)
 			{
@@ -58,6 +66,7 @@ namespace SteamTrade.TradeOffer
 							{
 								//todo: log steam api is giving us invalid offers.
 								Debug.WriteLine("Offer returned from steam api is not valid : " + resp.Offer.TradeOfferId);
+								LogError("Offer returned from steam api is not valid: " + resp.Offer.TradeOfferId);
 							}
 						}
 					}
@@ -74,6 +83,7 @@ namespace SteamTrade.TradeOffer
 		/// <returns></returns>
 		public bool GetTradeOffersSince(int unixTimeStamp)
 		{
+			LogDebug("Getting trade offers since timestamp " + unixTimeStamp.ToString());
 			var offers = webApi.GetTradeOffers(false, true, false, true, false, unixTimeStamp.ToString());
 			if (offers != null && offers.TradeOffersReceived != null)
 			{
@@ -97,6 +107,7 @@ namespace SteamTrade.TradeOffer
 							{
 								//todo: log steam api is giving us invalid offers.
 								Debug.WriteLine("Offer returned from steam api is not valid : " + resp.Offer.TradeOfferId);
+								LogError("Offer returned from steam API is not valid: " + resp.Offer.TradeOfferId);
 							}
 						}
 					}
@@ -108,19 +119,29 @@ namespace SteamTrade.TradeOffer
 
 		public bool GetOffers()
 		{
+			LogDebug("TradeOfferManager: Checking trade offers...");
+
 			if (LastTimeCheckedOffers != 0)
 			{
 				bool action = GetTradeOffersSince(LastTimeCheckedOffers);
 
 				if (action)
+				{
 					LastTimeCheckedOffers = GetUnixTimeStamp();
+				}
+
+				LogDebug("LastTimeCheckedOffers: " + LastTimeCheckedOffers.ToString() + ". Take action: " + action.ToString());
 				return action;
 			}
 			else
 			{
 				bool action = GetActiveTradeOffers();
 				if (action)
+				{
 					LastTimeCheckedOffers = GetUnixTimeStamp();
+				}
+
+				LogDebug("LastTimeCheckedOffers: " + LastTimeCheckedOffers.ToString() + ". Take action: " + action.ToString());
 				return action;
 			}
 		}
@@ -139,6 +160,7 @@ namespace SteamTrade.TradeOffer
 		{
 			var tradeOffer = new TradeOffer(session, offer);
 			tradeOfferHistory.Add(offer.TradeOfferId);
+			LogDebug("Sending trade offer to handler");
 			OnNewTradeOffer(tradeOffer);
 		}
 
@@ -168,6 +190,7 @@ namespace SteamTrade.TradeOffer
 				{
 					//todo: log steam api is giving us invalid offers.
 					Debug.WriteLine("Offer returned from steam api is not valid : " + resp.Offer.TradeOfferId);
+					LogError("Offer returned from steam API is not valid: " + resp.Offer.TradeOfferId);
 				}
 			}
 			return false;
