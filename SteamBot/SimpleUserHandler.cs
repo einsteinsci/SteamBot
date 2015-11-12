@@ -48,6 +48,7 @@ namespace SteamBot
 		{
 			Log.Info("{0} has unfriended me.", OtherSID.ToString());
 			Bot.ResetFriendsList();
+			Bot.RemoveUserHandler(OtherSID);
 		}
 
 		public override void OnMessage(string message, EChatEntryType type)

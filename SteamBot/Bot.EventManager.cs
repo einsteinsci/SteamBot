@@ -269,7 +269,7 @@ namespace SteamBot
 							Log.Warn("Friend already removed. Removing friend {0}.", friend.SteamID);
 							Bot._friends.Remove(friend.SteamID);
 							Bot._getUserHandler(friend.SteamID).OnFriendRemove();
-							Bot._removeUserHandler(friend.SteamID);
+							Bot.RemoveUserHandler(friend.SteamID);
 						}
 						else if (friend.Relationship == EFriendRelationship.RequestRecipient)
 						{
@@ -289,7 +289,7 @@ namespace SteamBot
 							{
 								Log.Warn("Friend add failed. Removing friend {0}.", friend.SteamID);
 								Bot.SteamFriends.RemoveFriend(friend.SteamID);
-								Bot._removeUserHandler(friend.SteamID);
+								Bot.RemoveUserHandler(friend.SteamID);
 							}
 						}
 						break;
