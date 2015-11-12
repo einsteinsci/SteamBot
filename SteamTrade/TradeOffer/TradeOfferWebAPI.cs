@@ -94,7 +94,17 @@ namespace SteamTrade.TradeOffer
 				{
 					Console.ForegroundColor = ConsoleColor.DarkYellow;
 					Console.WriteLine("[TradeOfferWebAPI] Unable to fetch trade offers. Trying again in 45 secs.");
-					Thread.Sleep(45000);
+					for (int i = 0; i < 45; i++)
+					{
+						Thread.Sleep(1000);
+
+						if (Thread.CurrentThread.ThreadState != System.Threading.ThreadState.Running)
+						{
+							Console.ForegroundColor = ConsoleColor.White;
+							Console.WriteLine("[TradeOfferWebAPI] Exit requested during trade offer wait.");
+							return null;
+						}
+					}
 				}
 			}
 

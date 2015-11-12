@@ -10,6 +10,8 @@ namespace SteamBot
 {
 	public class SimpleUserHandler : UserHandler
 	{
+		public const string SCREW_YOU_PHISHERS = "how about it? I can buy it with 10% OFF of full price...i got 40 keys for spend atm :)";
+
 		public TF2Value AmountAdded;
 
 		public Order ActiveOrder
@@ -52,6 +54,15 @@ namespace SteamBot
 		{
 			if (type != EChatEntryType.ChatMsg)
 			{
+				return;
+			}
+
+			if (message.EndsWith(SCREW_YOU_PHISHERS))
+			{
+				Log.Warn("Phisher Botnet again (victim: {0}). Unfriended.", Bot.SteamFriends.GetFriendPersonaName(OtherSID));
+
+				Bot.SteamFriends.RemoveFriend(OtherSID);
+				Bot.ResetFriendsList();
 				return;
 			}
 
@@ -385,23 +396,31 @@ namespace SteamBot
 			if (IsAdmin)
 			{
 				offer.Accept();
-				Log.Success("Accepted trade offer from admin {0}.", Bot.SteamFriends.GetFriendPersonaName(OtherSID));
+				Log.Success("Accepted trade offer from admin '{0}'.", Bot.SteamFriends.GetFriendPersonaName(OtherSID));
 				SendChatMessage("Trade offer complete.");
 			}
 			else
 			{
 				bool hasMatchingOrder = Bot.Orders.HasMatchingOrder(this, offer);
 				Order ord = Bot.Orders.GetMatchingOrder(this, offer);
-				if (hasMatchingOrder && !IsFullStock(ord))
+				bool isFullStock = IsFullStock(ord);
+
+				if (hasMatchingOrder && !isFullStock)
 				{
 					offer.Accept();
-					Log.Success("Accepted valid trade offer from user #{0}.", OtherSID.ToString());
+					Log.Success("Accepted valid trade offer from user {0}.", OtherSID.ToString());
 					SendChatMessage("I have accepted your trade offer.");
+				}
+				else if (isFullStock)
+				{
+					offer.Decline();
+					Log.Warn("Declined trade offer from user {0}, as stock was full.");
+					SendChatMessage("Unfortunately I seem to have full stock of that item. Your offer has been declined.");
 				}
 				else
 				{
 					offer.Decline();
-					Log.Warn("Declined trade offer from user #{0}.", OtherSID.ToString());
+					Log.Warn("Declined invalid trade offer from user {0}.", OtherSID.ToString());
 					SendChatMessage("There seems to be a problem with your trade offer. It has been declined.");
 				}
 

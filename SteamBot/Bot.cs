@@ -887,20 +887,32 @@ namespace SteamBot
 		{
 			DateTime lastHeartbeat = DateTime.Now.Subtract(TimeSpan.FromMinutes(4.5));
 
+			while (!IsRunning)
+			{
+				Thread.Sleep(1000);
+			}
+
 			while (IsRunning)
 			{
-				if (DateTime.Now.Subtract(lastHeartbeat).TotalMinutes > 5.0)
+				try
 				{
-					bool success = SendBpTfHeartbeat();
-					if (success)
-						Log.Info("bp.tf Heartbeat sent.");
-					else
-						Log.Error("bp.tf Heartbeat failed.");
+					if (DateTime.Now.Subtract(lastHeartbeat).TotalMinutes > 5.0)
+					{
+						bool success = SendBpTfHeartbeat();
+						if (success)
+							Log.Info("bp.tf Heartbeat sent.");
+						else
+							Log.Error("bp.tf Heartbeat failed.");
 
-					lastHeartbeat = DateTime.Now;
+						lastHeartbeat = DateTime.Now;
+					}
+
+					Thread.Sleep(1000);
 				}
-
-				Thread.Sleep(1000);
+				catch (Exception e)
+				{
+					Log.Error("backpack.tf heartbeat failed: " + e.ToString());
+				}
 			}
 		}
 
@@ -933,6 +945,8 @@ namespace SteamBot
 
 		public void CrafterLoop()
 		{
+			Thread.Sleep(5000);
+
 			DateTime lastCrafterLoop = DateTime.Now.Subtract(TimeSpan.FromMinutes(4.9));
 
 			while (IsRunning)
@@ -941,6 +955,12 @@ namespace SteamBot
 				{
 					GetInventory();
 					SetGamePlaying(440);
+
+					while (MyInventory == null)
+					{
+						Log.Debug("MyInventory is null for some reason.");
+						Thread.Sleep(2000);
+					}
 
 					bool didSomething = false;
 					do
