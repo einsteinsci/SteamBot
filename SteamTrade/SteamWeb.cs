@@ -81,8 +81,15 @@ namespace SteamTrade
 				}
 			}
 
-			// Get the response
-			return request.GetResponse() as HttpWebResponse;
+			try
+			{
+				// Get the response
+				return request.GetResponse() as HttpWebResponse;
+			}
+			catch (WebException e)
+			{
+				return null;
+			}
 		}
 
 		/// <summary>

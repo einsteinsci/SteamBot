@@ -433,6 +433,11 @@ namespace SteamBot
 
 		public bool IsFullStock(Order o)
 		{
+			if (o == null)
+			{
+				return false;
+			}
+
 			if (o.IsBuyOrder)
 			{
 				Bot.GetInventory();
