@@ -42,21 +42,33 @@ namespace SteamBot
 			SellOrders = new List<Order>();
 		}
 
-		public bool HasMatchingOrder(UserHandler handler, TradeOffer trade)
+		public bool? HasMatchingOrder(UserHandler handler, TradeOffer trade)
 		{
-			return BuyOrders.Exists((o) => o.TradeOfferMatches(handler, trade)) || 
-				SellOrders.Exists((o) => o.TradeOfferMatches(handler, trade));
+			foreach (Order o in AllOrders)
+			{
+				bool? matches = o.TradeOfferMatches(handler, trade);
+				if (matches == null)
+				{
+					handler.Log.Error("Unable to retreive inventory. Ignoring trade.");
+					return null;
+				}
+				else if (matches == true)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		public Order GetMatchingOrder(UserHandler handler, TradeOffer trade)
 		{
-			Order buy = BuyOrders.FirstOrDefault((o) => o.TradeOfferMatches(handler, trade));
+			Order buy = BuyOrders.FirstOrDefault((o) => o.TradeOfferMatches(handler, trade) == true);
 			if (buy != null)
 			{
 				return buy;
 			}
 
-			return SellOrders.FirstOrDefault((o) => o.TradeOfferMatches(handler, trade));
+			return SellOrders.FirstOrDefault((o) => o.TradeOfferMatches(handler, trade) == true);
 		}
 
 		public static OrderManager Load(Log logger)

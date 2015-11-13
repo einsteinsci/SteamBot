@@ -80,9 +80,9 @@ namespace SteamTrade.TradeOffer
 			//should be http://steamcommunity.com/{0}/{1}/tradeoffers - id/profile persona/id64 ideally
 			string referer = string.Format("https://steamcommunity.com/tradeoffer/{0}/", tradeOfferId);
 
-			var resp = steamWeb.Fetch(url, "POST", data, false, referer);
+			var resp = steamWeb?.Fetch(url, "POST", data, false, referer);
 
-			if (!String.IsNullOrEmpty(resp))
+			if (!string.IsNullOrEmpty(resp))
 			{
 				try
 				{

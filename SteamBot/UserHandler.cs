@@ -77,8 +77,14 @@ namespace SteamBot
 		{
 			get
 			{
-				otherInventoryTask.Wait();
-				return otherInventoryTask.Result;
+				if (otherInventoryTask.Wait(10000))
+				{
+					return otherInventoryTask.Result;
+				}
+				else
+				{
+					return null;
+				}
 			}
 		}
 

@@ -394,6 +394,8 @@ namespace SteamBot
 		
 		public override void OnNewTradeOffer(TradeOffer offer)
 		{
+			Log.Debug("Trade offer from user {0}.", OtherSID.ToString());
+
 			if (IsAdmin)
 			{
 				offer.Accept();
@@ -402,11 +404,11 @@ namespace SteamBot
 			}
 			else
 			{
-				bool hasMatchingOrder = Bot.Orders.HasMatchingOrder(this, offer);
+				bool? hasMatchingOrder = Bot.Orders.HasMatchingOrder(this, offer);
 				Order ord = Bot.Orders.GetMatchingOrder(this, offer);
 				bool isFullStock = IsFullStock(ord);
 
-				if (hasMatchingOrder && !isFullStock)
+				if (hasMatchingOrder == true && !isFullStock)
 				{
 					offer.Accept();
 					Log.Success("Accepted valid trade offer from user {0}.", OtherSID.ToString());
@@ -418,11 +420,15 @@ namespace SteamBot
 					Log.Warn("Declined trade offer from user {0}, as stock was full.");
 					SendChatMessage("Unfortunately I seem to have full stock of that item. Your offer has been declined.");
 				}
-				else
+				else if (hasMatchingOrder != null)
 				{
 					offer.Decline();
 					Log.Warn("Declined invalid trade offer from user {0}.", OtherSID.ToString());
 					SendChatMessage("There seems to be a problem with your trade offer. It has been declined.");
+				}
+				else
+				{
+					SendChatMessage("Unable to retrieve your inventory, and thus am unable to respond to your offer.");
 				}
 
 				//offer.Decline();

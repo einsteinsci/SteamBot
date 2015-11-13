@@ -910,7 +910,10 @@ namespace SteamBot
 						lastHeartbeat = DateTime.Now;
 					}
 
-					Thread.Sleep(1000);
+					if (Thread.CurrentThread.ThreadState == ThreadState.Running)
+					{
+						Thread.Sleep(1000);
+					}
 				}
 				catch (Exception e)
 				{

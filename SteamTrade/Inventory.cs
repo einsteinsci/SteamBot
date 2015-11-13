@@ -10,6 +10,8 @@ namespace SteamTrade
 {
 	public class Inventory
 	{
+		static bool _failedFetch = false;
+
 		/// <summary>
 		/// Fetches the inventory for the given Steam ID using the Steam API.
 		/// </summary>
@@ -19,6 +21,9 @@ namespace SteamTrade
 		/// <param name="steamWeb">The SteamWeb instance for this Bot</param>
 		public static Inventory FetchInventory(ulong steamId, string apiKey, SteamWeb steamWeb, Action<string> chatMessage)
 		{
+			Console.ForegroundColor = ConsoleColor.DarkGray;
+			Console.WriteLine("Trade offer from user #{0}.", steamId.ToString());
+
 			int attempts = 1;
 			InventoryResponse result = null;
 			while (result == null || result.result?.items == null)
@@ -45,12 +50,23 @@ namespace SteamTrade
 				{
 					attempts = 0;
 
-					if (chatMessage != null)
+					if (_failedFetch)
 					{
-						chatMessage("I am currently encountering issues connecting to Steam. Please try again in a few minutes.");
+						//Console.ForegroundColor = ConsoleColor.Red;
+						//Console.WriteLine("Fetch Failing already. Aborting.");
+						//Thread.CurrentThread.Abort();
 					}
 
-					Thread.Sleep(TimeSpan.FromMinutes(3));
+					if (chatMessage != null)
+					{
+						_failedFetch = true;
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine("Unable to fetch inventory of user #{0}. Giving up.", steamId.ToString());
+						Console.ForegroundColor = ConsoleColor.White;
+						//chatMessage("I am currently encountering issues connecting to Steam. Please try again in a few minutes.");
+
+						return null;
+					}
 				}
 			}
 			

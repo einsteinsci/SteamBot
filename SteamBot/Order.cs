@@ -68,10 +68,16 @@ namespace SteamBot
 			AllowPaint = allowPaint;
 		}
 
-		public bool TradeOfferMatches(UserHandler handler, TradeOffer offer)
+		public bool? TradeOfferMatches(UserHandler handler, TradeOffer offer)
 		{
 			handler.GetOtherInventory();
 			handler.Bot.GetInventory();
+
+			if (handler.OtherInventory == null)
+			{
+				handler.Log.Error("Inventory retrieval failed. Ignoring trade.");
+				return null;
+			}
 
 			if (IsBuyOrder)
 			{
