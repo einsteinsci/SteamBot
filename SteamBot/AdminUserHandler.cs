@@ -23,6 +23,7 @@ namespace SteamBot
 		private const string ADD_METAL_SUB = "metal";
 		private const string ADD_ALL_SUB = "all";
 		private const string ADD_ITEMS_SUB = "items";
+		private const string ADD_SELLING_SUB = "selling";
 
 		public AdminUserHandler(Bot bot, SteamID sid) : base(bot, sid)
 		{ }
@@ -227,9 +228,10 @@ namespace SteamBot
 		{
 			SendTradeMessage("{0} {1} [amount] [series] - adds all crates " +
 				"(optionally by series number, use 0 for amount to add all)", ADD_CMD, ADD_CRATE_SUB);
+			SendTradeMessage("{0} {1} [amount] - adds everything", ADD_CMD, ADD_ALL_SUB);
 			SendTradeMessage("{0} {1} [amount] - adds metal", ADD_CMD, ADD_METAL_SUB);
 			SendTradeMessage("{0} {1} [amount] - adds weapons", ADD_CMD, ADD_WEAPS_SUB);
-			SendTradeMessage("{0} {1} [amount] - adds everything", ADD_CMD, ADD_ALL_SUB);
+			SendTradeMessage("{0} {1} - adds items being sold", ADD_CMD, ADD_SELLING_SUB);
 			SendTradeMessage("{0} {1} [amount] - adds (non-pure) items", ADD_CMD, ADD_ITEMS_SUB);
 			SendTradeMessage("{0} <craft_material_type> [amount] - adds all or a given amount of items of a given crafting type.", ADD_CMD);
 			SendTradeMessage("{0} <defindex> [amount] - adds all or a given amount of items of a given defindex.", ADD_CMD);
@@ -239,7 +241,7 @@ namespace SteamBot
 
 		private void HandleAddCommand(string command)
 		{
-			string[] args = command.Split(' ');
+			List<string> args = command.Split(' ').ToList();
 			string typeToAdd;
 
 			bool subCmdOk = GetSubCommand(args, out typeToAdd);
@@ -266,30 +268,41 @@ namespace SteamBot
 				return;
 			}
 
+			while (args.Count < 4)
+			{
+				args.Add(string.Empty);
+			}
+
 			switch (typeToAdd)
 			{
-				case ADD_METAL_SUB:
-					AddItemsByCraftType("craft_bar", amount);
-					break;
-				case ADD_ITEMS_SUB:
-					AddAllNonPure();
-					break;
-				case ADD_WEAPS_SUB:
-					AddItemsByCraftType("weapon", amount);
-					break;
-				case ADD_CRATE_SUB:
-					// data[3] is the optional series number
-					if (!string.IsNullOrEmpty(args[3]))
-						AddCrateBySeries(args[3], amount);
-					else
-						AddItemsByCraftType("supply_crate", amount);
-					break;
-				case ADD_ALL_SUB:
-					AddAllItems();
-					break;
-				default:
-					AddItemsByCraftType(typeToAdd, amount);
-					break;
+			case ADD_METAL_SUB:
+				AddItemsByCraftType("craft_bar", amount);
+				break;
+			case ADD_ITEMS_SUB:
+				AddAllNonPure();
+				break;
+			case ADD_WEAPS_SUB:
+				AddItemsByCraftType("weapon", amount);
+				break;
+			case ADD_SELLING_SUB:
+				foreach (Order o in Bot.Orders.SellOrders)
+				{
+					Trade.AddAllItemsByDefindex(o.Defindex);
+				}
+				break;
+			case ADD_CRATE_SUB:
+				// data[3] is the optional series number
+				if (!string.IsNullOrEmpty(args[3]))
+					AddCrateBySeries(args[3], amount);
+				else
+					AddItemsByCraftType("supply_crate", amount);
+				break;
+			case ADD_ALL_SUB:
+				AddAllItems();
+				break;
+			default:
+				AddItemsByCraftType(typeToAdd, amount);
+				break;
 			}
 		}
 		
@@ -307,6 +320,14 @@ namespace SteamBot
 			{
 				Trade.RemoveAllItems();
 				return;
+			}
+
+			if (args[0].ToLower() == "selling")
+			{
+				foreach (Order o in Bot.Orders.SellOrders)
+				{
+					Trade.RemoveAllItemsByDefindex(o.Defindex);
+				}
 			}
 
 			if (args[0].ToLower() == "scrap")
@@ -423,9 +444,9 @@ namespace SteamBot
 			}
 		}
 
-		bool GetSubCommand(string[] data, out string subCommand)
+		bool GetSubCommand(List<string> data, out string subCommand)
 		{
-			if (data.Length < 2)
+			if (data.Count < 2)
 			{
 				SendTradeMessage("No parameter for cmd");
 				subCommand = null;
@@ -444,14 +465,14 @@ namespace SteamBot
 			return true;
 		}
 
-		static uint GetAddAmount(string[] data)
+		static uint GetAddAmount(List<string> data)
 		{
 			uint amount = 0;
 
-			if (data.Length > 2)
+			if (data.Count > 2)
 			{
 				// get the optional amount parameter
-				if (!String.IsNullOrEmpty(data[2]))
+				if (!string.IsNullOrEmpty(data[2]))
 				{
 					uint.TryParse(data[2], out amount);
 				}

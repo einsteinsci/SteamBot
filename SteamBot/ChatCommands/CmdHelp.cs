@@ -35,7 +35,7 @@ namespace SteamBot.ChatCommands
 			foreach (IChatCommand cmd in ChatHandler.ChatCommands)
 			{
 				string result = cmd.Syntax + ": " + cmd.Purpose;
-				if (cmd.IsAdminOnly)
+				if (cmd.IsAdminOnly && handler.IsAdmin)
 				{
 					result = "[ADMIN] " + result;
 				}

@@ -99,5 +99,15 @@ namespace SteamBot
 			}
 			return res;
 		}
+
+		public void SaveAll()
+		{
+			string filepath = Path.Combine(BotManager.DATA_FOLDER, ORDERS_FILENAME);
+			Directory.CreateDirectory(BotManager.DATA_FOLDER);
+
+			string json = JsonConvert.SerializeObject(this, Formatting.Indented);
+
+			File.WriteAllText(filepath, json);
+		}
 	}
 }

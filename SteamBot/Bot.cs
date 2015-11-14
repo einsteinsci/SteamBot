@@ -915,6 +915,10 @@ namespace SteamBot
 						Thread.Sleep(1000);
 					}
 				}
+				catch (ThreadAbortException)
+				{
+					Log.Warn("backpack.tf heartbeat thread already aborting.");
+				}
 				catch (Exception e)
 				{
 					Log.Error("backpack.tf heartbeat failed: " + e.ToString());

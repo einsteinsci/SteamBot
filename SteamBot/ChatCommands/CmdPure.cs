@@ -12,7 +12,7 @@ namespace SteamBot.ChatCommands
 	{
 		public string CommandName => "pure";
 
-		public bool IsAdminOnly => true;
+		public bool IsAdminOnly => false;
 
 		public string Purpose => "Counts amount of pure in stock";
 

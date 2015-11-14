@@ -362,13 +362,18 @@ namespace SteamBot
 
 		public override void OnTradeSuccess()
 		{
-			Log.Success("Trade Complete.");
+			Log.Success("Trade Complete. I suggest turning on email confirmations for additional security.");
+			SendChatToAdmins("Completed real-time trade with user {0}: {1}", OtherSID.ToString(),
+				ActiveOrder.ToString(Trade.CurrentSchema, true));
 		}
 
 		public override void OnTradeAwaitingEmailConfirmation(long tradeOfferID)
 		{
 			Log.Success("Trade ended awaiting email confirmation");
 			SendChatMessage("Please complete the email confirmation to finish the trade");
+			SendChatToAdmins("Completed real-time trade with user {0}: {1}. Awaiting email confirmation.", 
+				OtherSID.ToString(), ActiveOrder.ToString(Trade.CurrentSchema, true));
+			Console.Beep();
 		}
 
 		public override void OnTradeAccept()
@@ -383,6 +388,7 @@ namespace SteamBot
 					{
 						Log.Success("Trade Accepted!");
 						SendChatMessage("Thank you for trading with me.");
+						Console.Beep();
 					}
 				}
 				catch
@@ -394,6 +400,11 @@ namespace SteamBot
 		
 		public override void OnNewTradeOffer(TradeOffer offer)
 		{
+			if (offer.OfferState != TradeOfferState.TradeOfferStateActive)
+			{
+				return;
+			}
+
 			Log.Debug("Trade offer from user {0}.", OtherSID.ToString());
 
 			if (IsAdmin)
@@ -401,6 +412,7 @@ namespace SteamBot
 				offer.Accept();
 				Log.Success("Accepted trade offer from admin '{0}'.", Bot.SteamFriends.GetFriendPersonaName(OtherSID));
 				SendChatMessage("Trade offer complete.");
+				Console.Beep();
 			}
 			else
 			{
@@ -413,6 +425,9 @@ namespace SteamBot
 					offer.Accept();
 					Log.Success("Accepted valid trade offer from user {0}.", OtherSID.ToString());
 					SendChatMessage("I have accepted your trade offer.");
+					SendChatToAdmins("Accepted trade offer from user {0}: {1}", OtherSID.ToString(), 
+						ord.ToString(Trade.CurrentSchema, true));
+					Console.Beep();
 				}
 				else if (isFullStock)
 				{
@@ -429,11 +444,20 @@ namespace SteamBot
 				else
 				{
 					SendChatMessage("Unable to retrieve your inventory, and thus am unable to respond to your offer.");
+					//SendChatToAdmins("There was an error retrieving the inventory of {0}.", OtherSID.ToString());
 				}
 
 				//offer.Decline();
 				//Log.Warn("Declined trade offer from user {0}.", OtherSID.ToString());
 				//SendChatMessage("I don't know you. I cannot accept your trade offer.");
+			}
+		}
+
+		public void SendChatToAdmins(string chat, params object[] args)
+		{
+			foreach (SteamID steamid in Bot.Admins)
+			{
+				Bot.SteamFriends.SendChatMessage(steamid, EChatEntryType.ChatMsg, string.Format(chat, args));
 			}
 		}
 
@@ -475,7 +499,7 @@ namespace SteamBot
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.KEY_DEFINDEX))
 				{
-					Log.Warn("[TRADE-BUY] No more keys found. Moving on to refined metal.");
+					//Log.Warn("[TRADE-BUY] No more keys found. Moving on to refined metal.");
 					break;
 				}
 
@@ -488,7 +512,7 @@ namespace SteamBot
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.REFINED_DEFINDEX))
 				{
-					Log.Warn("[TRADE-BUY] No more refined metal found. Moving on to reclaimed metal.");
+					//Log.Warn("[TRADE-BUY] No more refined metal found. Moving on to reclaimed metal.");
 					break;
 				}
 
@@ -501,7 +525,7 @@ namespace SteamBot
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.RECLAIMED_DEFINDEX))
 				{
-					Log.Warn("[TRADE-BUY] No more reclaimed metal found. Moving on to scrap metal.");
+					//Log.Warn("[TRADE-BUY] No more reclaimed metal found. Moving on to scrap metal.");
 					break;
 				}
 

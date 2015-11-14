@@ -68,9 +68,12 @@
   <ItemGroup>
     <Compile Include="Bot.EventManager.cs" />
     <Compile Include="ChatCommands\ChatCommandAttribute.cs" />
+    <Compile Include="ChatCommands\CmdDefindex.cs" />
     <Compile Include="ChatCommands\CmdFeedback.cs" />
     <Compile Include="ChatCommands\CmdHelp.cs" />
+    <Compile Include="ChatCommands\CmdOrders.cs" />
     <Compile Include="ChatCommands\CmdPure.cs" />
+    <Compile Include="ChatCommands\CmdStock.cs" />
     <Compile Include="ChatCommands\CmdTrade.cs" />
     <Compile Include="ChatCommands\IChatCommand.cs" />
     <Compile Include="ChatHandler.cs" />

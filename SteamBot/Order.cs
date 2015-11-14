@@ -13,7 +13,7 @@ namespace SteamBot
 	{
 		[JsonProperty]
 		public double PriceRef
-		{ get; private set; }
+		{ get; set; }
 
 		public TF2Value Price => TF2Value.FromRef(PriceRef);
 
@@ -31,11 +31,11 @@ namespace SteamBot
 
 		[JsonProperty]
 		public bool AllowKillstreaks
-		{ get; private set; }
+		{ get; set; }
 
 		[JsonProperty]
 		public bool AllowPaint
-		{ get; private set; }
+		{ get; set; }
 
 		[JsonProperty]
 		public bool IsBuyOrder
@@ -43,7 +43,7 @@ namespace SteamBot
 
 		[JsonProperty]
 		public int MaxStock
-		{ get; private set; }
+		{ get; set; }
 
 		public Order()
 		{
@@ -57,7 +57,7 @@ namespace SteamBot
 		}
 
 		public Order(TF2Value price, Schema.Item item, int quality = 6, int maxStock = 5, bool craftable = true, 
-			bool allowKS = false, bool allowPaint = false)
+			bool allowKS = false, bool allowPaint = false, bool buyOrder = false)
 		{
 			PriceRef = price.RefinedTotal;
 			Defindex = item.Defindex;
@@ -66,6 +66,7 @@ namespace SteamBot
 			Craftable = craftable;
 			AllowKillstreaks = allowKS;
 			AllowPaint = allowPaint;
+			IsBuyOrder = buyOrder;
 		}
 
 		public bool? TradeOfferMatches(UserHandler handler, TradeOffer offer)
@@ -170,9 +171,14 @@ namespace SteamBot
 			return res;
 		}
 
-		public string ToString(Schema schema)
+		public string ToString(Schema schema, bool includeDefindex = false)
 		{
 			string itemName = schema.GetItem(Defindex).ItemName;
+
+			if (includeDefindex)
+			{
+				itemName += " (#" + Defindex.ToString() + ")";
+			}
 
 			string res = GetQualityString(Quality) + itemName + " for " + Price.ToString();
 			if (!Craftable)

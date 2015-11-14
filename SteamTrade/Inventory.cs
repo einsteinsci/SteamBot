@@ -21,9 +21,6 @@ namespace SteamTrade
 		/// <param name="steamWeb">The SteamWeb instance for this Bot</param>
 		public static Inventory FetchInventory(ulong steamId, string apiKey, SteamWeb steamWeb, Action<string> chatMessage)
 		{
-			Console.ForegroundColor = ConsoleColor.DarkGray;
-			Console.WriteLine("Trade offer from user #{0}.", steamId.ToString());
-
 			int attempts = 1;
 			InventoryResponse result = null;
 			while (result == null || result.result?.items == null)
