@@ -67,6 +67,7 @@ namespace SteamBot
 		static void sendChatMessage(UserHandler handler, string message)
 		{
 			handler.Bot.SteamFriends.SendChatMessage(handler.OtherSID, EChatEntryType.ChatMsg, message);
+			handler.Log.Debug("Sent chat message to user {0}: {1}.", handler.OtherSID, message);
 		}
 	}
 }

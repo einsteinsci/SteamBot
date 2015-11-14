@@ -903,7 +903,7 @@ namespace SteamBot
 					{
 						bool success = SendBpTfHeartbeat();
 						if (success)
-							Log.Info("bp.tf Heartbeat sent.");
+							Log.Debug("bp.tf Heartbeat sent.");
 						else
 							Log.Error("bp.tf Heartbeat failed.");
 
@@ -1006,7 +1006,7 @@ namespace SteamBot
 				{
 					List<ulong> assets = _getAssetIDsInBackpack(TF2Value.SCRAP_DEFINDEX, 3);
 					Crafting.CraftItems(this, ECraftingRecipe.CombineScrap, assets.ToArray());
-					Log.Info("Crafted scrap into reclaimed.");
+					Log.Debug("Crafted scrap into reclaimed.");
 					didSomething = true;
 				}
 
@@ -1014,7 +1014,7 @@ namespace SteamBot
 				{
 					List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 1);
 					Crafting.CraftItems(this, ECraftingRecipe.SmeltReclaimed, assets.ToArray());
-					Log.Info("Smelted reclaimed into scrap.");
+					Log.Debug("Smelted reclaimed into scrap.");
 					didSomething = true;
 				}
 
@@ -1022,7 +1022,7 @@ namespace SteamBot
 				{
 					List<ulong> assets = _getAssetIDsInBackpack(TF2Value.RECLAIMED_DEFINDEX, 3);
 					Crafting.CraftItems(this, ECraftingRecipe.CombineReclaimed, assets.ToArray());
-					Log.Info("Crafted reclaimed into refined.");
+					Log.Debug("Crafted reclaimed into refined.");
 					didSomething = true;
 				}
 
@@ -1030,7 +1030,7 @@ namespace SteamBot
 				{
 					List<ulong> assets = _getAssetIDsInBackpack(TF2Value.REFINED_DEFINDEX, 1);
 					Crafting.CraftItems(this, ECraftingRecipe.SmeltRefined, assets.ToArray());
-					Log.Info("Smelted refined into reclaimed.");
+					Log.Debug("Smelted refined into reclaimed.");
 					didSomething = true;
 				}
 
