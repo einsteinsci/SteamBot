@@ -10,7 +10,7 @@ namespace SteamBot
 {
 	public class SimpleUserHandler : UserHandler
 	{
-		public const string SCREW_YOU_PHISHERS = "how about it? I can buy it with 10% OFF of full price...i got 40 keys for spend atm :)";
+		public const string SCREW_YOU_PHISHERS = "hello :) Im just interesting in high tier items/skins";
 
 		public TF2Value AmountAdded;
 
@@ -60,7 +60,10 @@ namespace SteamBot
 
 			if (message.EndsWith(SCREW_YOU_PHISHERS))
 			{
-				Log.Warn("Phisher Botnet again (victim: {0}). Unfriended.", Bot.SteamFriends.GetFriendPersonaName(OtherSID));
+				Log.Warn("Phisher Botnet again (victim: {0} '{1}'). Unfriended.", OtherSID.ToString(),
+					Bot.SteamFriends.GetFriendPersonaName(OtherSID));
+				SendChatToAdmins("Botnet victim encountered: {0} '{1}'", OtherSID.ToString(),
+					Bot.SteamFriends.GetFriendPersonaName(OtherSID));
 
 				Bot.SteamFriends.RemoveFriend(OtherSID);
 				Bot.ResetFriendsList();
