@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using SteamTrade;
 using SteamTrade.TradeOffer;
@@ -14,6 +15,7 @@ namespace SteamBot
 	public class OrderManager
 	{
 		public static readonly string ORDERS_FILENAME = "orders.json";
+		public static readonly string ORDERS_FOLDER = Path.Combine(GetOneDrivePath(), "SteamBot");
 
 		[JsonProperty]
 		public List<Order> BuyOrders
@@ -73,8 +75,8 @@ namespace SteamBot
 
 		public static OrderManager Load(Log logger)
 		{
-			string filepath = Path.Combine(BotManager.DATA_FOLDER, ORDERS_FILENAME);
-			Directory.CreateDirectory(BotManager.DATA_FOLDER);
+			string filepath = Path.Combine(ORDERS_FOLDER, ORDERS_FILENAME);
+			Directory.CreateDirectory(ORDERS_FOLDER);
 
 			OrderManager res = new OrderManager();
 			if (File.Exists(filepath))
@@ -102,12 +104,19 @@ namespace SteamBot
 
 		public void SaveAll()
 		{
-			string filepath = Path.Combine(BotManager.DATA_FOLDER, ORDERS_FILENAME);
-			Directory.CreateDirectory(BotManager.DATA_FOLDER);
+			string filepath = Path.Combine(ORDERS_FOLDER, ORDERS_FILENAME);
+			Directory.CreateDirectory(ORDERS_FOLDER);
 
 			string json = JsonConvert.SerializeObject(this, Formatting.Indented);
 
 			File.WriteAllText(filepath, json);
+		}
+
+		public static string GetOneDrivePath()
+		{
+			const string onedriveRegPath = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\OneDrive";
+
+			return Registry.GetValue(onedriveRegPath, "UserFolder", null) as string;
 		}
 	}
 }
