@@ -15,7 +15,7 @@ namespace SteamTrade
 		private const int SCRAP_PER_RECLAIMED = 3;
 		private const int SCRAP_PER_REFINED = SCRAP_PER_RECLAIMED * RECLAIMED_PER_REFINED;
 		private const int RECLAIMED_PER_REFINED = 3;
-		private const int REFINED_PER_KEY = 16;
+		private const int REFINED_PER_KEY = 17;
 		private const int GRAIN_PER_KEY = GRAIN_PER_REFINED * REFINED_PER_KEY;
 
 		public const ushort SCRAP_DEFINDEX = 5000;

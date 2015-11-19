@@ -98,6 +98,20 @@ namespace SteamBot
 					else
 						return false; // I only pay in pure if it's a buy order.
 				}
+				foreach (var asset in offer.Items.GetTheirItems())
+				{
+					Inventory.Item item = handler.Trade.OtherInventory.GetItem((ulong)asset.AssetId);
+
+					if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
+						paying -= TF2Value.Scrap;
+					else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
+						paying -= TF2Value.Reclaimed;
+					else if (item.Defindex == TF2Value.REFINED_DEFINDEX)
+						paying -= TF2Value.Refined;
+					else if (item.Defindex == TF2Value.KEY_DEFINDEX)
+						paying -= TF2Value.Key;
+				}
+
 				if (paying > Price)
 				{
 					return false;
@@ -134,6 +148,19 @@ namespace SteamBot
 						paid += TF2Value.Refined;
 					else if (item.Defindex == TF2Value.KEY_DEFINDEX)
 						paid += TF2Value.Key;
+				}
+				foreach (var asset in offer.Items.GetMyItems())
+				{
+					Inventory.Item item = handler.OtherInventory.GetItem((ulong)asset.AssetId);
+
+					if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
+						paid -= TF2Value.Scrap;
+					else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
+						paid -= TF2Value.Reclaimed;
+					else if (item.Defindex == TF2Value.REFINED_DEFINDEX)
+						paid -= TF2Value.Refined;
+					else if (item.Defindex == TF2Value.KEY_DEFINDEX)
+						paid -= TF2Value.Key;
 				}
 
 				if (paid < Price)

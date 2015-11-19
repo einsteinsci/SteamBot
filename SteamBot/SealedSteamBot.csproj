@@ -71,6 +71,7 @@
     <Compile Include="ChatCommands\CmdDefindex.cs" />
     <Compile Include="ChatCommands\CmdFeedback.cs" />
     <Compile Include="ChatCommands\CmdHelp.cs" />
+    <Compile Include="ChatCommands\CmdNetWorth.cs" />
     <Compile Include="ChatCommands\CmdOrders.cs" />
     <Compile Include="ChatCommands\CmdPure.cs" />
     <Compile Include="ChatCommands\CmdStock.cs" />
