@@ -246,7 +246,7 @@ namespace SteamBot
 
 			if (message == "buy" || message == "listall" || message == "showall")
 			{
-				SendTradeMessage("These are the items I am currently selling: ");
+				SendTradeMessage("These are the items I am currently selling and have in stock: ");
 				foreach (Order o in Bot.Orders.SellOrders)
 				{
 					List<Inventory.Item> inStock = Bot.MyInventory.
