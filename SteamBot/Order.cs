@@ -87,6 +87,12 @@ namespace SteamBot
 				{
 					Inventory.Item item = handler.Bot.MyInventory.GetItem((ulong)asset.AssetId);
 
+					if (item == null)
+					{
+						//handler.Log.Error("No item matching asset ID " + asset.AssetId.ToString());
+						continue;
+					}
+
 					if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
 						paying += TF2Value.Scrap;
 					else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
@@ -101,6 +107,12 @@ namespace SteamBot
 				foreach (var asset in offer.Items.GetTheirItems())
 				{
 					Inventory.Item item = handler.Trade.OtherInventory.GetItem((ulong)asset.AssetId);
+
+					if (item == null)
+					{
+						//handler.Log.Error("No item matching asset ID " + asset.AssetId.ToString());
+						continue;
+					}
 
 					if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
 						paying -= TF2Value.Scrap;
@@ -140,6 +152,12 @@ namespace SteamBot
 				{
 					Inventory.Item item = handler.OtherInventory.GetItem((ulong)asset.AssetId);
 
+					if (item == null)
+					{
+						//handler.Log.Error("No item matching asset ID " + asset.AssetId.ToString());
+						continue;
+					}
+
 					if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
 						paid += TF2Value.Scrap;
 					else if (item.Defindex == TF2Value.RECLAIMED_DEFINDEX)
@@ -152,6 +170,12 @@ namespace SteamBot
 				foreach (var asset in offer.Items.GetMyItems())
 				{
 					Inventory.Item item = handler.OtherInventory.GetItem((ulong)asset.AssetId);
+
+					if (item == null)
+					{
+						//handler.Log.Error("No item matching asset ID " + asset.AssetId.ToString());
+						continue;
+					}
 
 					if (item.Defindex == TF2Value.SCRAP_DEFINDEX)
 						paid -= TF2Value.Scrap;
