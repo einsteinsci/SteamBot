@@ -167,7 +167,7 @@ namespace SteamBot
 							ActiveOrder = o;
 							SendTradeMessage(o.ToString(Trade.CurrentSchema));
 
-							AddMyPayment();
+							AddPure(ActiveOrder.Price);
 						}
 					}
 				}
@@ -481,7 +481,7 @@ namespace SteamBot
 			return false;
 		}
 
-		public void AddMyPayment()
+		public void AddPure(TF2Value orderPayment)
 		{
 			if (ActiveOrder == null)
 			{
@@ -498,7 +498,7 @@ namespace SteamBot
 			SendTradeMessage("Adding payment for this trade...");
 			TF2Value myPayment = TF2Value.Zero;
 			TF2Value currentIteration = TF2Value.Key;
-			while (myPayment + currentIteration <= ActiveOrder.Price)
+			while (myPayment + currentIteration <= orderPayment)
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.KEY_DEFINDEX))
 				{
@@ -511,7 +511,7 @@ namespace SteamBot
 			}
 
 			currentIteration = TF2Value.Refined;
-			while (myPayment + currentIteration <= ActiveOrder.Price)
+			while (myPayment + currentIteration <= orderPayment)
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.REFINED_DEFINDEX))
 				{
@@ -524,7 +524,7 @@ namespace SteamBot
 			}
 
 			currentIteration = TF2Value.Reclaimed;
-			while (myPayment + currentIteration <= ActiveOrder.Price)
+			while (myPayment + currentIteration <= orderPayment)
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.RECLAIMED_DEFINDEX))
 				{
@@ -537,11 +537,11 @@ namespace SteamBot
 			}
 
 			currentIteration = TF2Value.Scrap;
-			while (myPayment + currentIteration <= ActiveOrder.Price)
+			while (myPayment + currentIteration <= orderPayment)
 			{
 				if (!Trade.AddItemByDefindex(TF2Value.SCRAP_DEFINDEX))
 				{
-					Log.Warn("[TRADE-BUY] No more scrap metal found.");
+					Log.Warn("[PAYMENT] No more scrap metal found.");
 					break;
 				}
 
@@ -549,9 +549,9 @@ namespace SteamBot
 				myPayment += currentIteration;
 			}
 
-			if (myPayment != ActiveOrder.Price)
+			if (myPayment != orderPayment)
 			{
-				Log.Error("Could not add correct amount of {0}. Instead paid {1}.", ActiveOrder.Price.ToRefString(),
+				Log.Error("Could not add correct amount of {0}. Instead added {1}.", ActiveOrder.Price.ToRefString(),
 					myPayment.ToRefString());
 				Trade.CancelTrade();
 				SendChatMessage("I have encountered an error. Please send the trade again.");
@@ -563,6 +563,7 @@ namespace SteamBot
 		public bool Validate()
 		{
 			List<string> errors = new List<string>();
+			TF2Value? diff = null;
 
 			if (ActiveOrder == null)
 			{
@@ -593,6 +594,10 @@ namespace SteamBot
 					}
 					else if (AmountAdded > ActiveOrder.Price)
 					{
+						diff = AmountAdded - ActiveOrder.Price;
+					}
+					else if (AmountAdded > ActiveOrder.Price + TF2Value.FromRef(1))
+					{
 						errors.Add(string.Format("You are paying too much. The price is {0}, but you have paid {1}.",
 							ActiveOrder.Price.ToRefString(), AmountAdded.ToRefString()));
 					}
@@ -610,6 +615,12 @@ namespace SteamBot
 				{
 					SendTradeMessage("> " + e);
 				}
+			}
+
+			if (errors.Count == 0 && diff != null)
+			{
+				SendTradeMessage("Adding change...");
+				AddPure(diff.Value);
 			}
 
 			return errors.Count == 0;
